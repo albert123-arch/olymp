@@ -40,7 +40,6 @@ $user = current_user();
           <a class="btn btn-sm btn-outline-secondary" href="<?= h(url('login.php')) ?>"><?= h(t('login')) ?></a>
           <a class="btn btn-sm btn-outline-primary" href="<?= h(url('register.php')) ?>"><?= h(t('register')) ?></a>
         <?php endif; ?>
-        <span class="text-secondary small"><?= h(t('language')) ?></span>
         <?php
           $scriptName = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
           $baseUrl = app_base_url();
@@ -51,7 +50,7 @@ $user = current_user();
           $currentLang = current_lang() === 'ru' ? 'RU' : 'EN';
           $toggleLang = current_lang() === 'ru' ? 'en' : 'ru';
         ?>
-        <a class="btn btn-sm btn-outline-dark" href="<?= h(url($currentPath, array_merge($_GET, ['lang' => $toggleLang]))) ?>"><?= h($currentLang) ?></a>
+        <a class="btn btn-sm btn-outline-secondary lang-toggle" href="<?= h(url($currentPath, array_merge($_GET, ['lang' => $toggleLang]))) ?>" aria-label="<?= h(t('language')) ?>"><?= h($currentLang) ?></a>
       </div>
     </div>
   </div>

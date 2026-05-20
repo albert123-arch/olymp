@@ -269,6 +269,21 @@ body {
   border-color: var(--om-accent);
 }
 
+.lang-toggle {
+  min-width: 3.2rem;
+  padding-left: .7rem;
+  padding-right: .7rem;
+  letter-spacing: .05em;
+  font-weight: 600;
+}
+
+.lang-toggle:hover,
+.lang-toggle:focus-visible {
+  color: #fff;
+  background: var(--om-accent);
+  border-color: var(--om-accent);
+}
+
 textarea.form-control {
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
   font-size: .9rem;
