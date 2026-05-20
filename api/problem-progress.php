@@ -20,6 +20,9 @@ $user = current_user();
 if (!$user) {
     json_response(['ok' => false, 'error' => 'auth_required'], 401);
 }
+if (!db_table_exists('user_problem_progress')) {
+    json_response(['ok' => false, 'error' => 'progress_table_missing'], 500);
+}
 
 $input = json_decode((string)file_get_contents('php://input'), true);
 if (!is_array($input)) {

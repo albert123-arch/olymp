@@ -35,6 +35,25 @@ function user_can_manage_content(?array $user = null): bool
     return in_array((string)($user['role'] ?? ''), ['admin', 'teacher'], true);
 }
 
+function db_table_exists(string $table): bool
+{
+    if (!preg_match('/^[A-Za-z0-9_]+$/', $table)) {
+        return false;
+    }
+
+    try {
+        $stmt = db()->prepare(
+            'SELECT COUNT(*)
+             FROM information_schema.tables
+             WHERE table_schema = DATABASE() AND table_name = ?'
+        );
+        $stmt->execute([$table]);
+        return (int)$stmt->fetchColumn() > 0;
+    } catch (Throwable) {
+        return false;
+    }
+}
+
 function require_content_manager(): void
 {
     if (!user_can_manage_content()) {
@@ -229,10 +248,16 @@ function fetch_chapter(string $courseSlug, string $chapterSlug): ?array
 function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
 {
     $userId = (int)($_SESSION['user_id'] ?? 0);
+    $hasBookmarks = db_table_exists('bookmarks');
+    $hasProgress = db_table_exists('user_problem_progress');
+    $bookmarkSelect = $hasBookmarks ? 'CASE WHEN bm.user_id IS NULL THEN 0 ELSE 1 END' : '0';
+    $progressSelect = $hasProgress ? 'upp.status' : 'NULL';
+    $bookmarkJoin = $hasBookmarks ? 'LEFT JOIN bookmarks bm ON bm.problem_id = p.id AND bm.user_id = :bookmark_user_id' : '';
+    $progressJoin = $hasProgress ? 'LEFT JOIN user_problem_progress upp ON upp.problem_id = p.id AND upp.user_id = :progress_user_id' : '';
     $sql = 'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
                    COALESCE(tag_list.tags_csv, "") AS tags_csv,
-                   CASE WHEN bm.user_id IS NULL THEN 0 ELSE 1 END AS is_bookmarked,
-                   upp.status AS progress_status
+                   ' . $bookmarkSelect . ' AS is_bookmarked,
+                   ' . $progressSelect . ' AS progress_status
             FROM problems p
             JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
             LEFT JOIN (
@@ -241,10 +266,16 @@ function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
                 JOIN tags t ON t.id = ptag.tag_id
                 GROUP BY ptag.problem_id
             ) tag_list ON tag_list.problem_id = p.id
-            LEFT JOIN bookmarks bm ON bm.problem_id = p.id AND bm.user_id = :bookmark_user_id
-            LEFT JOIN user_problem_progress upp ON upp.problem_id = p.id AND upp.user_id = :progress_user_id
+            ' . $bookmarkJoin . '
+            ' . $progressJoin . '
             WHERE p.is_published = 1';
-    $params = ['lang' => current_lang(), 'bookmark_user_id' => $userId, 'progress_user_id' => $userId];
+    $params = ['lang' => current_lang()];
+    if ($hasBookmarks) {
+        $params['bookmark_user_id'] = $userId;
+    }
+    if ($hasProgress) {
+        $params['progress_user_id'] = $userId;
+    }
     if ($chapterId !== null) {
         $sql .= ' AND p.chapter_id = :chapter_id';
         $params['chapter_id'] = $chapterId;
@@ -261,12 +292,18 @@ function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
 function fetch_problem(string $code): ?array
 {
     $userId = (int)($_SESSION['user_id'] ?? 0);
+    $hasBookmarks = db_table_exists('bookmarks');
+    $hasProgress = db_table_exists('user_problem_progress');
+    $bookmarkSelect = $hasBookmarks ? 'CASE WHEN bm.user_id IS NULL THEN 0 ELSE 1 END' : '0';
+    $progressSelect = $hasProgress ? 'upp.status' : 'NULL';
+    $bookmarkJoin = $hasBookmarks ? 'LEFT JOIN bookmarks bm ON bm.problem_id = p.id AND bm.user_id = :bookmark_user_id' : '';
+    $progressJoin = $hasProgress ? 'LEFT JOIN user_problem_progress upp ON upp.problem_id = p.id AND upp.user_id = :progress_user_id' : '';
     $stmt = db()->prepare(
         'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
                 ch.slug AS chapter_slug, c.slug AS course_slug,
                 COALESCE(tag_list.tags_csv, "") AS tags_csv,
-                CASE WHEN bm.user_id IS NULL THEN 0 ELSE 1 END AS is_bookmarked,
-                upp.status AS progress_status
+                ' . $bookmarkSelect . ' AS is_bookmarked,
+                ' . $progressSelect . ' AS progress_status
          FROM problems p
          JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
          JOIN chapters ch ON ch.id = p.chapter_id
@@ -277,12 +314,19 @@ function fetch_problem(string $code): ?array
              JOIN tags t ON t.id = ptag.tag_id
              GROUP BY ptag.problem_id
          ) tag_list ON tag_list.problem_id = p.id
-         LEFT JOIN bookmarks bm ON bm.problem_id = p.id AND bm.user_id = :bookmark_user_id
-         LEFT JOIN user_problem_progress upp ON upp.problem_id = p.id AND upp.user_id = :progress_user_id
+         ' . $bookmarkJoin . '
+         ' . $progressJoin . '
          WHERE p.problem_code = :code AND p.is_published = 1
          LIMIT 1'
     );
-    $stmt->execute(['lang' => current_lang(), 'code' => $code, 'bookmark_user_id' => $userId, 'progress_user_id' => $userId]);
+    $params = ['lang' => current_lang(), 'code' => $code];
+    if ($hasBookmarks) {
+        $params['bookmark_user_id'] = $userId;
+    }
+    if ($hasProgress) {
+        $params['progress_user_id'] = $userId;
+    }
+    $stmt->execute($params);
     $row = $stmt->fetch();
     return $row ?: null;
 }
