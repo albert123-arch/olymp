@@ -113,9 +113,31 @@
     const hash = window.location.hash;
     if (!hash) return;
     const trigger = document.querySelector(`.nav-tabs [data-bs-toggle="tab"][href="${hash}"], .nav-tabs [data-bs-toggle="tab"][data-bs-target="${hash}"]`);
-    if (!trigger) return;
-    const tab = bootstrap.Tab.getOrCreateInstance(trigger);
-    tab.show();
+    const target = document.querySelector(hash);
+    if (!trigger || !target) return;
+
+    const activateManually = () => {
+      document.querySelectorAll('.nav-tabs .nav-link.active').forEach((el) => el.classList.remove('active'));
+      document.querySelectorAll('.tab-content .tab-pane.active.show').forEach((el) => el.classList.remove('active', 'show'));
+      trigger.classList.add('active');
+      trigger.setAttribute('aria-selected', 'true');
+      document.querySelectorAll('.nav-tabs .nav-link').forEach((el) => {
+        if (el !== trigger) el.setAttribute('aria-selected', 'false');
+      });
+      target.classList.add('active', 'show');
+    };
+
+    try {
+      const tab = bootstrap?.Tab?.getOrCreateInstance(trigger);
+      if (tab && typeof tab.show === 'function') {
+        tab.show();
+        return;
+      }
+    } catch (error) {
+      // fallback below
+    }
+
+    activateManually();
   }
 
   window.addEventListener('hashchange', activateTabFromHash);
