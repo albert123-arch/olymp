@@ -73,19 +73,22 @@ function fetch_chapter(string $courseSlug, string $chapterSlug): ?array
 function fetch_problems(?int $chapterId = null): array
 {
     $sql = 'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
-                   GROUP_CONCAT(t.slug ORDER BY t.slug SEPARATOR ",") AS tags_csv
+                   COALESCE(tag_list.tags_csv, "") AS tags_csv
             FROM problems p
             JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
-            LEFT JOIN problem_tags ptag ON ptag.problem_id = p.id
-            LEFT JOIN tags t ON t.id = ptag.tag_id
+            LEFT JOIN (
+                SELECT ptag.problem_id, GROUP_CONCAT(t.slug ORDER BY t.slug SEPARATOR ",") AS tags_csv
+                FROM problem_tags ptag
+                JOIN tags t ON t.id = ptag.tag_id
+                GROUP BY ptag.problem_id
+            ) tag_list ON tag_list.problem_id = p.id
             WHERE p.is_published = 1';
     $params = ['lang' => current_lang()];
     if ($chapterId !== null) {
         $sql .= ' AND p.chapter_id = :chapter_id';
         $params['chapter_id'] = $chapterId;
     }
-    $sql .= ' GROUP BY p.id, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html
-              ORDER BY p.sort_order, p.id';
+    $sql .= ' ORDER BY p.sort_order, p.id';
     $stmt = db()->prepare($sql);
     $stmt->execute($params);
     return $stmt->fetchAll();
@@ -96,15 +99,19 @@ function fetch_problem(string $code): ?array
     $stmt = db()->prepare(
         'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
                 ch.slug AS chapter_slug, c.slug AS course_slug,
-                GROUP_CONCAT(t.slug ORDER BY t.slug SEPARATOR ",") AS tags_csv
+                COALESCE(tag_list.tags_csv, "") AS tags_csv
          FROM problems p
          JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
          JOIN chapters ch ON ch.id = p.chapter_id
          JOIN courses c ON c.id = ch.course_id
-         LEFT JOIN problem_tags ptag ON ptag.problem_id = p.id
-         LEFT JOIN tags t ON t.id = ptag.tag_id
+         LEFT JOIN (
+             SELECT ptag.problem_id, GROUP_CONCAT(t.slug ORDER BY t.slug SEPARATOR ",") AS tags_csv
+             FROM problem_tags ptag
+             JOIN tags t ON t.id = ptag.tag_id
+             GROUP BY ptag.problem_id
+         ) tag_list ON tag_list.problem_id = p.id
          WHERE p.problem_code = :code AND p.is_published = 1
-         GROUP BY p.id, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html, ch.slug, c.slug'
+         LIMIT 1'
     );
     $stmt->execute(['lang' => current_lang(), 'code' => $code]);
     $row = $stmt->fetch();
@@ -137,4 +144,3 @@ function render_db_notice(): void
 {
     echo '<div class="alert alert-warning my-4">' . h(t('missing_db')) . '</div>';
 }
-

@@ -1,209 +1,10 @@
--- Clean Olympiad Maths standalone schema and starter seed.
--- Import into the separate subdomain database. No o_ table prefixes are used.
+-- Repair Russian DB content and ensure starter problems exist.
+-- Run this in phpMyAdmin for the Olympiad Maths database.
+-- This updates database rows; it does not add PHP hardcoded content.
 
 SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE IF EXISTS chapter_progress;
-DROP TABLE IF EXISTS user_problem_progress;
-DROP TABLE IF EXISTS bookmarks;
-DROP TABLE IF EXISTS problem_tags;
-DROP TABLE IF EXISTS tags;
-DROP TABLE IF EXISTS problem_media_texts;
-DROP TABLE IF EXISTS problem_media;
-DROP TABLE IF EXISTS problem_texts;
-DROP TABLE IF EXISTS problems;
-DROP TABLE IF EXISTS chapter_texts;
-DROP TABLE IF EXISTS chapters;
-DROP TABLE IF EXISTS course_texts;
-DROP TABLE IF EXISTS courses;
-DROP TABLE IF EXISTS users;
-
-SET FOREIGN_KEY_CHECKS = 1;
-
-CREATE TABLE users (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(120) NOT NULL,
-  email VARCHAR(190) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  role ENUM('student','teacher','admin') NOT NULL DEFAULT 'student',
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_users_email (email),
-  KEY idx_users_role (role)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE courses (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  slug VARCHAR(120) NOT NULL,
-  status ENUM('active','coming_soon') NOT NULL DEFAULT 'coming_soon',
-  sort_order INT UNSIGNED NOT NULL DEFAULT 0,
-  is_published TINYINT(1) NOT NULL DEFAULT 1,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_courses_slug (slug),
-  KEY idx_courses_status_sort (status, sort_order)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE course_texts (
-  course_id INT UNSIGNED NOT NULL,
-  lang ENUM('en','ru') NOT NULL,
-  title VARCHAR(190) NOT NULL,
-  summary_html TEXT NULL,
-  overview_html MEDIUMTEXT NULL,
-  teacher_guide_html MEDIUMTEXT NULL,
-  PRIMARY KEY (course_id, lang),
-  KEY idx_course_texts_lang (lang),
-  CONSTRAINT fk_course_texts_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE chapters (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  course_id INT UNSIGNED NOT NULL,
-  slug VARCHAR(140) NOT NULL,
-  sort_order INT UNSIGNED NOT NULL DEFAULT 0,
-  is_published TINYINT(1) NOT NULL DEFAULT 1,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_chapters_course_slug (course_id, slug),
-  KEY idx_chapters_course_sort (course_id, sort_order),
-  CONSTRAINT fk_chapters_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE chapter_texts (
-  chapter_id INT UNSIGNED NOT NULL,
-  lang ENUM('en','ru') NOT NULL,
-  title VARCHAR(220) NOT NULL,
-  summary_html TEXT NULL,
-  theory_html MEDIUMTEXT NULL,
-  examples_html MEDIUMTEXT NULL,
-  worksheet_html MEDIUMTEXT NULL,
-  teacher_notes_html MEDIUMTEXT NULL,
-  PRIMARY KEY (chapter_id, lang),
-  KEY idx_chapter_texts_lang (lang),
-  CONSTRAINT fk_chapter_texts_chapter FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE problems (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  chapter_id INT UNSIGNED NOT NULL,
-  problem_code VARCHAR(40) NOT NULL,
-  book_number INT UNSIGNED NULL,
-  difficulty ENUM('intro','core','challenge') NOT NULL DEFAULT 'core',
-  sort_order INT UNSIGNED NOT NULL DEFAULT 0,
-  is_published TINYINT(1) NOT NULL DEFAULT 1,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_problems_problem_code (problem_code),
-  KEY idx_problems_chapter_sort (chapter_id, sort_order),
-  KEY idx_problems_difficulty (difficulty),
-  CONSTRAINT fk_problems_chapter FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE problem_texts (
-  problem_id BIGINT UNSIGNED NOT NULL,
-  lang ENUM('en','ru') NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  statement_html MEDIUMTEXT NOT NULL,
-  hint_html MEDIUMTEXT NULL,
-  solution_html MEDIUMTEXT NULL,
-  teacher_note_html MEDIUMTEXT NULL,
-  PRIMARY KEY (problem_id, lang),
-  FULLTEXT KEY ft_problem_texts_search (title, statement_html),
-  CONSTRAINT fk_problem_texts_problem FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE problem_media (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  problem_id BIGINT UNSIGNED NOT NULL,
-  role ENUM('statement','hint','solution','teacher_note','extra') NOT NULL DEFAULT 'extra',
-  file_path VARCHAR(500) NOT NULL,
-  mime_type VARCHAR(120) NULL,
-  sort_order INT UNSIGNED NOT NULL DEFAULT 0,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  KEY idx_problem_media_problem_role (problem_id, role, sort_order),
-  CONSTRAINT fk_problem_media_problem FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE problem_media_texts (
-  media_id BIGINT UNSIGNED NOT NULL,
-  lang ENUM('en','ru') NOT NULL,
-  alt_text VARCHAR(255) NULL,
-  caption_html TEXT NULL,
-  PRIMARY KEY (media_id, lang),
-  CONSTRAINT fk_problem_media_texts_media FOREIGN KEY (media_id) REFERENCES problem_media(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE tags (
-  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  slug VARCHAR(120) NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_tags_slug (slug)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE problem_tags (
-  problem_id BIGINT UNSIGNED NOT NULL,
-  tag_id INT UNSIGNED NOT NULL,
-  PRIMARY KEY (problem_id, tag_id),
-  KEY idx_problem_tags_tag (tag_id),
-  CONSTRAINT fk_problem_tags_problem FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE,
-  CONSTRAINT fk_problem_tags_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE bookmarks (
-  user_id BIGINT UNSIGNED NOT NULL,
-  problem_id BIGINT UNSIGNED NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id, problem_id),
-  KEY idx_bookmarks_problem (problem_id),
-  CONSTRAINT fk_bookmarks_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  CONSTRAINT fk_bookmarks_problem FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE user_problem_progress (
-  user_id BIGINT UNSIGNED NOT NULL,
-  problem_id BIGINT UNSIGNED NOT NULL,
-  status ENUM('unseen','started','solved','review') NOT NULL DEFAULT 'unseen',
-  attempts INT UNSIGNED NOT NULL DEFAULT 0,
-  started_at TIMESTAMP NULL DEFAULT NULL,
-  solved_at TIMESTAMP NULL DEFAULT NULL,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id, problem_id),
-  KEY idx_user_problem_progress_status (status),
-  CONSTRAINT fk_user_problem_progress_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  CONSTRAINT fk_user_problem_progress_problem FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE chapter_progress (
-  user_id BIGINT UNSIGNED NOT NULL,
-  chapter_id INT UNSIGNED NOT NULL,
-  status ENUM('not_started','in_progress','completed') NOT NULL DEFAULT 'not_started',
-  percent_complete DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id, chapter_id),
-  KEY idx_chapter_progress_status (status),
-  CONSTRAINT fk_chapter_progress_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  CONSTRAINT fk_chapter_progress_chapter FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-INSERT INTO courses (slug, status, sort_order) VALUES
-('number-theory', 'active', 1),
-('algebra', 'coming_soon', 2),
-('geometry', 'coming_soon', 3),
-('combinatorics', 'coming_soon', 4),
-('inequalities', 'coming_soon', 5),
-('functional-equations', 'coming_soon', 6),
-('mixed-problems', 'coming_soon', 7);
-
-INSERT INTO course_texts (course_id, lang, title, summary_html, overview_html, teacher_guide_html)
-SELECT id, 'en',
-CASE slug WHEN 'number-theory' THEN 'Number Theory' WHEN 'algebra' THEN 'Algebra' WHEN 'geometry' THEN 'Geometry' WHEN 'combinatorics' THEN 'Combinatorics' WHEN 'inequalities' THEN 'Inequalities' WHEN 'functional-equations' THEN 'Functional Equations' ELSE 'Mixed Problems' END,
-CASE slug WHEN 'number-theory' THEN 'Divisibility, primes, congruences, Diophantine equations, and classic olympiad methods.' WHEN 'algebra' THEN 'Identities, polynomials, sequences, equations, and olympiad algebra.' WHEN 'geometry' THEN 'Triangles, circles, areas, transformations, and proof methods.' WHEN 'combinatorics' THEN 'Counting, pigeonhole principle, invariants, colorings, graphs, and games.' WHEN 'inequalities' THEN 'AM-GM, Cauchy-Schwarz, rearrangement, and olympiad inequalities.' WHEN 'functional-equations' THEN 'Substitutions, injectivity, surjectivity, and functional structure.' ELSE 'Integrated problem sets and mock olympiads.' END,
-CASE slug WHEN 'number-theory' THEN '<p>Start with divisibility and prime factorisation, then move toward congruences and classical theorems.</p>' ELSE '<p>This course is planned for a later release.</p>' END,
-CASE slug WHEN 'number-theory' THEN '<p>Use definitions first, then ask students to verbalize proof patterns before applying formulas.</p>' ELSE '<p>Teacher guide will be added with the first published chapter.</p>' END
-FROM courses;
-
-INSERT INTO course_texts (course_id, lang, title, summary_html, overview_html, teacher_guide_html)
+REPLACE INTO course_texts (course_id, lang, title, summary_html, overview_html, teacher_guide_html)
 SELECT id, 'ru',
 CASE slug WHEN 'number-theory' THEN 'Теория чисел' WHEN 'algebra' THEN 'Алгебра' WHEN 'geometry' THEN 'Геометрия' WHEN 'combinatorics' THEN 'Комбинаторика' WHEN 'inequalities' THEN 'Неравенства' WHEN 'functional-equations' THEN 'Функциональные уравнения' ELSE 'Смешанные задачи' END,
 CASE slug WHEN 'number-theory' THEN 'Делимость, простые числа, сравнения, диофантовы уравнения и классические олимпиадные методы.' WHEN 'algebra' THEN 'Тождества, многочлены, последовательности, уравнения и олимпиадная алгебра.' WHEN 'geometry' THEN 'Треугольники, окружности, площади, преобразования и методы доказательства.' WHEN 'combinatorics' THEN 'Подсчет, принцип Дирихле, инварианты, раскраски, графы и игры.' WHEN 'inequalities' THEN 'AM-GM, Коши, перестановки и олимпиадные неравенства.' WHEN 'functional-equations' THEN 'Подстановки, инъективность, сюръективность и структура функций.' ELSE 'Смешанные подборки задач и пробные олимпиады.' END,
@@ -211,26 +12,7 @@ CASE slug WHEN 'number-theory' THEN '<p>Начните с делимости и 
 CASE slug WHEN 'number-theory' THEN '<p>Сначала работайте с определениями, затем просите учеников проговаривать шаблоны доказательств перед применением формул.</p>' ELSE '<p>Методические заметки появятся вместе с первой опубликованной главой.</p>' END
 FROM courses;
 
-INSERT INTO chapters (course_id, slug, sort_order, is_published)
-SELECT id, 'divisibility-prime-factorisation', 1, 1 FROM courses WHERE slug='number-theory'
-UNION ALL SELECT id, 'gcd-lcm-euclidean-algorithm', 2, 1 FROM courses WHERE slug='number-theory'
-UNION ALL SELECT id, 'modular-arithmetic', 3, 1 FROM courses WHERE slug='number-theory'
-UNION ALL SELECT id, 'congruences-remainders', 4, 1 FROM courses WHERE slug='number-theory'
-UNION ALL SELECT id, 'diophantine-equations', 5, 1 FROM courses WHERE slug='number-theory'
-UNION ALL SELECT id, 'infinite-descent', 6, 1 FROM courses WHERE slug='number-theory'
-UNION ALL SELECT id, 'fermat-euler', 7, 1 FROM courses WHERE slug='number-theory';
-
-INSERT INTO chapter_texts (chapter_id, lang, title, summary_html, theory_html, examples_html, worksheet_html, teacher_notes_html)
-SELECT id, 'en',
-CASE slug WHEN 'divisibility-prime-factorisation' THEN 'Divisibility and Prime Factorisation' WHEN 'gcd-lcm-euclidean-algorithm' THEN 'GCD, LCM and Euclidean Algorithm' WHEN 'modular-arithmetic' THEN 'Modular Arithmetic' WHEN 'congruences-remainders' THEN 'Congruences and Remainders' WHEN 'diophantine-equations' THEN 'Diophantine Equations' WHEN 'infinite-descent' THEN 'Infinite Descent' ELSE 'Fermat and Euler' END,
-CASE slug WHEN 'divisibility-prime-factorisation' THEN 'Core definitions, prime factorisation, divisor counting, and proof habits.' ELSE 'Coming soon.' END,
-CASE slug WHEN 'divisibility-prime-factorisation' THEN '<h2>Divisibility</h2><p>For integers \\(a\\) and \\(b\\), with \\(a\\ne0\\), the notation \\(a\\mid b\\) means that \\(b=ak\\) for some integer \\(k\\).</p><h2>Prime factorisation</h2><p>Every integer \\(n>1\\) has a unique representation as a product of prime powers.</p><h2>Counting divisors</h2><p>If \\(n=p_1^{a_1}\\cdots p_m^{a_m}\\), then \\(\\tau(n)=(a_1+1)\\cdots(a_m+1)\\).</p>' ELSE '<p>Content will be added soon.</p>' END,
-CASE slug WHEN 'divisibility-prime-factorisation' THEN '<ol><li>If \\(6\\mid n\\), prove \\(3\\mid n\\).</li><li>Find the prime factorisation of \\(840\\).</li><li>Count the positive divisors of \\(840\\).</li></ol>' ELSE '<p>Worked examples will be added soon.</p>' END,
-CASE slug WHEN 'divisibility-prime-factorisation' THEN '<p>Use the practice tab as the worksheet for this MVP. A printable worksheet export can be added later.</p>' ELSE '<p>Worksheet will be added soon.</p>' END,
-CASE slug WHEN 'divisibility-prime-factorisation' THEN '<p>Return often to the definition \\(b=ak\\). Let students compare direct proof, factorisation, and contradiction approaches.</p>' ELSE '<p>Teacher notes will be added soon.</p>' END
-FROM chapters;
-
-INSERT INTO chapter_texts (chapter_id, lang, title, summary_html, theory_html, examples_html, worksheet_html, teacher_notes_html)
+REPLACE INTO chapter_texts (chapter_id, lang, title, summary_html, theory_html, examples_html, worksheet_html, teacher_notes_html)
 SELECT id, 'ru',
 CASE slug WHEN 'divisibility-prime-factorisation' THEN 'Делимость и разложение на простые множители' WHEN 'gcd-lcm-euclidean-algorithm' THEN 'НОД, НОК и алгоритм Евклида' WHEN 'modular-arithmetic' THEN 'Модульная арифметика' WHEN 'congruences-remainders' THEN 'Сравнения и остатки' WHEN 'diophantine-equations' THEN 'Диофантовы уравнения' WHEN 'infinite-descent' THEN 'Бесконечный спуск' ELSE 'Ферма и Эйлер' END,
 CASE slug WHEN 'divisibility-prime-factorisation' THEN 'Основные определения, разложение на простые множители, подсчет делителей и культура доказательства.' ELSE 'Скоро.' END,
@@ -304,18 +86,20 @@ VALUES
 ('NT-01-039', 'Find the GCD and LCM', 'Найти НОД и НОК', 'Number Theory', 'GCD and LCM', 'core', '["gcd", "lcm"]', '<p>Find \\(\\gcd(210,330)\\) and \\(\\operatorname{lcm}(210,330)\\).</p>', '<p>Найдите \\(\\gcd(210,330)\\) и \\(\\operatorname{lcm}(210,330)\\).</p>', '<p>Factor both numbers first.</p>', '<p>Сначала разложите оба числа на простые множители.</p>', '<p>\\(210=2\\cdot3\\cdot5\\cdot7\\), and \\(330=2\\cdot3\\cdot5\\cdot11\\). Therefore \\(\\gcd=2\\cdot3\\cdot5=30\\), and \\(\\operatorname{lcm}=2\\cdot3\\cdot5\\cdot7\\cdot11=2310\\).</p>', '<p>\\(210=2\\cdot3\\cdot5\\cdot7\\), а \\(330=2\\cdot3\\cdot5\\cdot11\\). Поэтому \\(\\gcd=2\\cdot3\\cdot5=30\\), а \\(\\operatorname{lcm}=2\\cdot3\\cdot5\\cdot7\\cdot11=2310\\).</p>', '<p>This example makes shared and unshared prime factors visible.</p>', '<p>Этот пример хорошо показывает общие и необщие простые множители.</p>', 39),
 ('NT-01-040', 'Olympiad Warm-Up', 'Олимпиадная разминка', 'Number Theory', 'Divisibility Proofs', 'challenge', '["proof", "factorisation", "consecutive-integers"]', '<p>Prove that \\(24\\mid n(n^2-1)(n+2)\\) for every integer \\(n\\).</p>', '<p>Докажите, что \\(24\\mid n(n^2-1)(n+2)\\) для любого целого \\(n\\).</p>', '<p>Factor the expression into four consecutive integers.</p>', '<p>Разложите выражение в произведение четырех последовательных целых чисел.</p>', '<p>We have \\(n(n^2-1)(n+2)=n(n-1)(n+1)(n+2)\\), the product of four consecutive integers. Among four consecutive integers there is a multiple of \\(4\\), another even number, and at least one multiple of \\(3\\). Thus the product is divisible by \\(8\\cdot3=24\\).</p>', '<p>Имеем \\(n(n^2-1)(n+2)=n(n-1)(n+1)(n+2)\\), то есть произведение четырех последовательных целых чисел. Среди них есть число, кратное \\(4\\), еще одно четное число и хотя бы одно число, кратное \\(3\\). Поэтому произведение делится на \\(8\\cdot3=24\\).</p>', '<p>Check the divisibility by \\(8\\) carefully: four consecutive integers contain a multiple of \\(4\\) and another even number.</p>', '<p>Аккуратно проверьте делимость на \\(8\\): среди четырех последовательных чисел есть кратное \\(4\\) и еще одно четное число.</p>', 40);
 
-INSERT INTO problems (chapter_id, problem_code, book_number, difficulty, sort_order, is_published)
+INSERT IGNORE INTO problems (chapter_id, problem_code, book_number, difficulty, sort_order, is_published)
 SELECT ch.id, s.id, s.sort_order, s.difficulty, s.sort_order, 1
 FROM seed_problem_rows s
 JOIN chapters ch ON ch.slug = 'divisibility-prime-factorisation';
 
-INSERT INTO problem_texts (problem_id, lang, title, statement_html, hint_html, solution_html, teacher_note_html)
+REPLACE INTO problem_texts (problem_id, lang, title, statement_html, hint_html, solution_html, teacher_note_html)
 SELECT p.id, 'en', s.title_en, s.statement_html_en, s.hint_html_en, s.solution_html_en, s.teacher_note_html_en
-FROM seed_problem_rows s JOIN problems p ON p.problem_code = s.id;
+FROM seed_problem_rows s
+JOIN problems p ON p.problem_code = s.id;
 
-INSERT INTO problem_texts (problem_id, lang, title, statement_html, hint_html, solution_html, teacher_note_html)
+REPLACE INTO problem_texts (problem_id, lang, title, statement_html, hint_html, solution_html, teacher_note_html)
 SELECT p.id, 'ru', s.title_ru, s.statement_html_ru, s.hint_html_ru, s.solution_html_ru, s.teacher_note_html_ru
-FROM seed_problem_rows s JOIN problems p ON p.problem_code = s.id;
+FROM seed_problem_rows s
+JOIN problems p ON p.problem_code = s.id;
 
 INSERT IGNORE INTO tags (slug)
 SELECT DISTINCT jt.tag
