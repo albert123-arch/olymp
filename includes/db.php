@@ -15,6 +15,15 @@ function db_config(): array
     if (is_file($configFile)) {
         $custom = require $configFile;
         if (is_array($custom)) {
+            if (isset($custom['db']) && is_array($custom['db'])) {
+                $custom = [
+                    'host' => $custom['db']['host'] ?? $defaults['host'],
+                    'database' => $custom['db']['database'] ?? $custom['db']['name'] ?? $defaults['database'],
+                    'username' => $custom['db']['username'] ?? $custom['db']['user'] ?? $defaults['username'],
+                    'password' => $custom['db']['password'] ?? $defaults['password'],
+                    'charset' => $custom['db']['charset'] ?? $defaults['charset'],
+                ];
+            }
             return array_merge($defaults, $custom);
         }
     }
@@ -48,4 +57,3 @@ function db_available(): bool
         return false;
     }
 }
-
