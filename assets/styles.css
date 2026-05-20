@@ -105,47 +105,33 @@ body {
 }
 
 .problem-title-row {
-  display: flex;
-  justify-content: space-between;
-  gap: .75rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .85rem;
   align-items: start;
-  margin-bottom: .65rem;
+  margin-bottom: .75rem;
 }
 
-.problem-title-main,
-.problem-actions-secondary {
+.problem-title-main {
   display: flex;
   flex-wrap: wrap;
-  gap: .4rem;
+  gap: .45rem;
   align-items: center;
+  min-width: 0;
 }
 
 .problem-actions-secondary {
+  display: flex;
+  gap: .8rem;
+  align-items: center;
   justify-content: flex-end;
-}
-
-.problem-code,
-.problem-level,
-.problem-kind {
-  border: 1px solid var(--om-line);
-  background: #fff;
-  border-radius: 999px;
-  color: var(--om-muted);
-  font-size: .78rem;
-  font-weight: 700;
-  padding: .18rem .55rem;
-}
-
-.problem-code {
-  color: var(--om-accent);
-  background: #eef4ff;
-  border-color: #cfe0ff;
+  flex: 0 0 auto;
 }
 
 .problem-heading {
-  font-size: 1.12rem;
+  font-size: 1.08rem;
   line-height: 1.35;
-  margin-bottom: .6rem;
+  margin: 0;
   font-weight: 700;
 }
 
@@ -160,6 +146,7 @@ body {
   border: 1px solid var(--om-line);
   color: #4f5d73;
   font-weight: 600;
+  font-size: .76rem;
 }
 
 .actions {
@@ -169,13 +156,57 @@ body {
   margin-top: .8rem;
 }
 
-.problem-state-btn {
-  flex: 0 0 auto;
-  white-space: nowrap;
+.problem-icon-btn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: #637083;
+  display: inline-grid;
+  height: 2rem;
+  place-items: center;
+  padding: 0;
+  width: 2rem;
 }
 
-.solved-state-badge {
-  align-self: center;
+.problem-icon-btn:focus-visible {
+  border-radius: 999px;
+  outline: 3px solid rgba(34, 87, 166, .2);
+  outline-offset: 2px;
+}
+
+.problem-solved-toggle span {
+  border: 1.8px solid currentColor;
+  border-radius: 999px;
+  display: block;
+  height: 1.35rem;
+  width: 1.35rem;
+}
+
+.problem-solved-toggle.active {
+  color: #15906f;
+}
+
+.problem-solved-toggle.active span {
+  background: currentColor;
+  box-shadow: inset 0 0 0 4px #fff;
+}
+
+.problem-number {
+  color: #5c697b;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+  min-width: 2.1rem;
+  text-align: center;
+}
+
+.problem-bookmark-toggle svg {
+  height: 1.72rem;
+  width: 1.72rem;
+}
+
+.problem-bookmark-toggle.active {
+  color: #d64b4b;
 }
 
 .mjx-container {
@@ -219,14 +250,13 @@ textarea.form-control {
   }
 
   .problem-title-row {
-    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .problem-actions-secondary {
     justify-content: flex-start;
   }
 
-  .problem-state-btn,
   .actions .btn {
     width: auto;
   }

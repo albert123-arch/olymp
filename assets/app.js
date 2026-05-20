@@ -18,7 +18,9 @@
       if (!button) return;
       const active = localStorage.getItem(storageKey) === '1';
       button.classList.toggle('active', active);
-      button.textContent = active ? button.dataset.active : button.dataset.default;
+      const label = active ? button.dataset.active : button.dataset.default;
+      button.setAttribute('aria-label', label);
+      button.setAttribute('title', label);
       if (button === solved) {
         card.classList.toggle('is-solved', active);
         if (solvedBadge) solvedBadge.hidden = !active;

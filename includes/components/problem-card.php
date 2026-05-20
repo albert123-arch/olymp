@@ -6,6 +6,11 @@ $cardId = preg_replace('/[^a-zA-Z0-9_-]/', '-', (string)($problem['problem_code'
 $levelKey = difficulty_level_key((string)($problem['difficulty'] ?? 'core'));
 $typeKey = problem_type_key($problem);
 $searchText = strtolower(($problem['title'] ?? '') . ' ' . ($problem['problem_code'] ?? '') . ' ' . implode(' ', $tags));
+$primaryTag = $tags ? reset($tags) : '';
+$problemNumber = (string)($problem['book_number'] ?? '');
+if ($problemNumber === '') {
+    $problemNumber = (string)($problem['problem_code'] ?? '');
+}
 ?>
 <article class="card problem-card compact-problem-card shadow-sm mb-3"
          data-problem-code="<?= h($problem['problem_code'] ?? '') ?>"
@@ -16,28 +21,27 @@ $searchText = strtolower(($problem['title'] ?? '') . ' ' . ($problem['problem_co
   <div class="card-body">
     <div class="problem-title-row">
       <div class="problem-title-main">
-        <?php if (!empty($problem['problem_code'])): ?>
-          <span class="problem-code"><?= h($problem['problem_code']) ?></span>
+        <h2 class="problem-heading"><?= h($problem['title'] ?? '') ?></h2>
+        <?php if ($primaryTag !== ''): ?>
+          <span class="badge rounded-pill problem-tag"><?= h(tag_label((string)$primaryTag)) ?></span>
         <?php endif; ?>
-        <span class="problem-level"><?= h(difficulty_label((string)($problem['difficulty'] ?? 'core'))) ?></span>
-        <span class="problem-kind"><?= h(t($typeKey)) ?></span>
       </div>
       <div class="problem-actions-secondary">
-        <span class="badge text-bg-success solved-state-badge" hidden><?= h(t('solved')) ?></span>
-        <button class="btn btn-sm btn-outline-secondary problem-state-btn js-bookmark" type="button" data-default="<?= h(t('bookmark_action')) ?>" data-active="<?= h(t('bookmarked_action')) ?>"><?= h(t('bookmark_action')) ?></button>
-        <button class="btn btn-sm btn-outline-success problem-state-btn js-solved" type="button" data-default="<?= h(t('mark_solved_action')) ?>" data-active="<?= h(t('solved_action')) ?>"><?= h(t('mark_solved_action')) ?></button>
+        <button class="problem-icon-btn problem-solved-toggle js-solved" type="button" aria-label="<?= h(t('mark_solved_action')) ?>" title="<?= h(t('mark_solved_action')) ?>" data-default="<?= h(t('mark_solved_action')) ?>" data-active="<?= h(t('solved_action')) ?>">
+          <span aria-hidden="true"></span>
+        </button>
+        <?php if ($problemNumber !== ''): ?>
+          <span class="problem-number"><?= h($problemNumber) ?></span>
+        <?php endif; ?>
+        <button class="problem-icon-btn problem-bookmark-toggle js-bookmark" type="button" aria-label="<?= h(t('bookmark_action')) ?>" title="<?= h(t('bookmark_action')) ?>" data-default="<?= h(t('bookmark_action')) ?>" data-active="<?= h(t('bookmarked_action')) ?>">
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+            <path d="M6 3.75h12a1 1 0 0 1 1 1v15.5l-7-4.1-7 4.1V4.75a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          </svg>
+        </button>
       </div>
     </div>
-    <h2 class="problem-heading"><?= h($problem['title'] ?? '') ?></h2>
     <div class="statement math-content"><?= $problem['statement_html'] ?? '' ?></div>
     <?php $mediaItems = fetch_problem_media((int)($problem['id'] ?? 0), 'statement'); include __DIR__ . '/media-renderer.php'; ?>
-    <?php if ($tags): ?>
-      <div class="d-flex flex-wrap gap-1 my-3">
-        <?php foreach ($tags as $tag): ?>
-          <span class="badge rounded-pill problem-tag"><?= h(tag_label($tag)) ?></span>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
     <div class="actions">
       <?php if (!empty($problem['hint_html'])): ?>
         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#hint-<?= h($cardId) ?>" type="button" aria-expanded="false"><?= h(t('hint')) ?></button>
