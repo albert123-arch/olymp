@@ -14,7 +14,7 @@ if (db_available() && $_SERVER['REQUEST_METHOD'] === 'POST') {
         db()->prepare('REPLACE INTO chapter_texts (chapter_id, lang, title, summary_html, theory_html, examples_html, worksheet_html, teacher_notes_html) VALUES (?,?,?,?,?,?,?,?)')
             ->execute([$id, $lang, $_POST["title_$lang"], $_POST["summary_$lang"], $_POST["theory_$lang"], $_POST["examples_$lang"], $_POST["worksheet_$lang"], $_POST["teacher_$lang"]]);
     }
-    header('Location: ' . app_url('admin/chapters.php'));
+    header('Location: ' . url('admin/chapters.php'));
     exit;
 }
 $pageTitle = t('chapters') . ' | ' . t('admin');

@@ -38,7 +38,7 @@ function user_can_manage_content(?array $user = null): bool
 function require_content_manager(): void
 {
     if (!user_can_manage_content()) {
-        header('Location: ' . app_url('login.php'));
+        header('Location: ' . url('login.php'));
         exit;
     }
 }
@@ -96,11 +96,80 @@ function register_user(string $name, string $email, string $password): array
     }
 }
 
-function app_url(string $path = '', array $params = []): string
+function app_base_url(): string
+{
+    $configFile = dirname(__DIR__) . '/config.php';
+    if (is_file($configFile)) {
+        $config = require $configFile;
+        if (is_array($config)) {
+            $configuredBase = rtrim((string)($config['base_url'] ?? $config['BASE_URL'] ?? ''), '/');
+            if ($configuredBase !== '') {
+                if (!preg_match('#^(https?:)?//#', $configuredBase) && !str_starts_with($configuredBase, '/') && !str_starts_with($configuredBase, '.')) {
+                    $configuredBase = '/' . $configuredBase;
+                }
+                return $configuredBase;
+            }
+        }
+    }
+
+    $scriptName = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    if ($scriptName === '') {
+        return '';
+    }
+
+    if (str_contains($scriptName, '/admin/')) {
+        return rtrim((string)strstr($scriptName, '/admin/', true), '/');
+    }
+
+    $dir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+    return $dir === '/' || $dir === '.' ? '' : $dir;
+}
+
+function url(string $path = '', array $params = []): string
 {
     $params = array_merge(['lang' => current_lang()], $params);
     $query = http_build_query($params);
-    return '/' . ltrim($path, '/') . ($query ? '?' . $query : '');
+    $base = app_base_url();
+    $cleanPath = ltrim($path, '/');
+    $prefix = $base !== '' ? $base : '';
+    return $prefix . '/' . $cleanPath . ($query ? '?' . $query : '');
+}
+
+function asset_url(string $path): string
+{
+    $base = app_base_url();
+    $cleanPath = ltrim($path, '/');
+    $prefix = $base !== '' ? $base : '';
+    return $prefix . '/' . $cleanPath;
+}
+
+function app_url(string $path = '', array $params = []): string
+{
+    return url($path, $params);
+}
+
+function course_url(string $courseSlug): string
+{
+    return url('course.php', ['course' => $courseSlug]);
+}
+
+function chapter_url(string $courseSlug, string $chapterSlug): string
+{
+    return url('chapter.php', ['course' => $courseSlug, 'chapter' => $chapterSlug]);
+}
+
+function practice_url(string $courseSlug, ?string $chapterSlug = null): string
+{
+    $params = ['course' => $courseSlug];
+    if ($chapterSlug !== null && $chapterSlug !== '') {
+        $params['chapter'] = $chapterSlug;
+    }
+    return url('practice.php', $params);
+}
+
+function problem_url(string $problemCode): string
+{
+    return url('problem.php', ['code' => $problemCode]);
 }
 
 function fetch_all_courses(): array
@@ -157,7 +226,7 @@ function fetch_chapter(string $courseSlug, string $chapterSlug): ?array
     return $row ?: null;
 }
 
-function fetch_problems(?int $chapterId = null): array
+function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
 {
     $sql = 'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
                    COALESCE(tag_list.tags_csv, "") AS tags_csv
@@ -174,6 +243,9 @@ function fetch_problems(?int $chapterId = null): array
     if ($chapterId !== null) {
         $sql .= ' AND p.chapter_id = :chapter_id';
         $params['chapter_id'] = $chapterId;
+    } elseif ($courseId !== null) {
+        $sql .= ' AND p.chapter_id IN (SELECT id FROM chapters WHERE course_id = :course_id)';
+        $params['course_id'] = $courseId;
     }
     $sql .= ' ORDER BY p.sort_order, p.id';
     $stmt = db()->prepare($sql);
@@ -220,11 +292,11 @@ function fetch_problem_media(int $problemId, string $role): array
 
 function difficulty_label(string $difficulty): string
 {
-    $labels = [
-        'en' => ['intro' => 'Intro', 'core' => 'Core', 'challenge' => 'Challenge'],
-        'ru' => ['intro' => 'Вводная', 'core' => 'Базовая', 'challenge' => 'Сложная'],
-    ];
-    return $labels[current_lang()][$difficulty] ?? $difficulty;
+    return match ($difficulty) {
+        'intro' => t('level1'),
+        'challenge' => t('challenge_problem'),
+        default => t('level2'),
+    };
 }
 
 function difficulty_level_key(string $difficulty): string
@@ -249,6 +321,54 @@ function problem_type_key(array $problem): string
         return 'proof';
     }
     return 'computation';
+}
+
+function tag_label(string $tag, ?string $lang = null): string
+{
+    $lang ??= current_lang();
+    $labels = [
+        'ru' => [
+            'absolute-value' => 'Модуль',
+            'classification' => 'Классификация',
+            'consecutive-integers' => 'Последовательные числа',
+            'coprime' => 'Взаимно простые',
+            'counterexample' => 'Контрпример',
+            'counting' => 'Подсчет',
+            'definition' => 'Определение',
+            'difference' => 'Разность',
+            'digits' => 'Цифры',
+            'divisibility' => 'Делимость',
+            'divisibility-test' => 'Признаки делимости',
+            'divisors' => 'Делители',
+            'divisor-counting' => 'Подсчет делителей',
+            'equation' => 'Уравнение',
+            'exponent' => 'Показатель',
+            'exponents' => 'Показатели',
+            'expression' => 'Выражение',
+            'factorial' => 'Факториал',
+            'factorisation' => 'Разложение на множители',
+            'prime-factorisation' => 'Разложение на простые множители',
+            'gcd' => 'НОД',
+            'identity' => 'Тождество',
+            'impossibility' => 'Невозможность',
+            'integer' => 'Целые числа',
+            'lcm' => 'НОК',
+            'linear-combination' => 'Линейная комбинация',
+            'listing' => 'Перечисление',
+            'modular-arithmetic' => 'Сравнения',
+            'optimization' => 'Оптимизация',
+            'prime' => 'Простые числа',
+            'proof' => 'Доказательство',
+            'remainder' => 'Остатки',
+            'remainders' => 'Остатки',
+            'squares' => 'Квадраты',
+            'tau-function' => 'Число делителей',
+            'trailing-zeros' => 'Нули в конце',
+            'transitivity' => 'Транзитивность',
+        ],
+    ];
+
+    return $labels[$lang][$tag] ?? $tag;
 }
 
 function render_db_notice(): void

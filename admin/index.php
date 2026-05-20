@@ -25,11 +25,11 @@ include dirname(__DIR__) . '/includes/layout/header.php';
   </div>
   <div class="alert alert-info"><?= h(t('missing_translations')) ?>: <?= h((string)$missing) ?></div>
   <div class="list-group">
-    <a class="list-group-item list-group-item-action" href="<?= h(app_url('admin/courses.php')) ?>"><?= h(t('courses')) ?></a>
-    <a class="list-group-item list-group-item-action" href="<?= h(app_url('admin/chapters.php')) ?>"><?= h(t('chapters')) ?></a>
-    <a class="list-group-item list-group-item-action" href="<?= h(app_url('admin/problems.php')) ?>"><?= h(t('problems')) ?></a>
-    <a class="list-group-item list-group-item-action" href="<?= h(app_url('admin/media.php')) ?>"><?= h(t('media')) ?></a>
-    <a class="list-group-item list-group-item-action" href="<?= h(app_url('admin/import-json.php')) ?>"><?= h(t('import_json')) ?></a>
+    <a class="list-group-item list-group-item-action" href="<?= h(url('admin/courses.php')) ?>"><?= h(t('courses')) ?></a>
+    <a class="list-group-item list-group-item-action" href="<?= h(url('admin/chapters.php')) ?>"><?= h(t('chapters')) ?></a>
+    <a class="list-group-item list-group-item-action" href="<?= h(url('admin/problems.php')) ?>"><?= h(t('problems')) ?></a>
+    <a class="list-group-item list-group-item-action" href="<?= h(url('admin/media.php')) ?>"><?= h(t('media')) ?></a>
+    <a class="list-group-item list-group-item-action" href="<?= h(url('admin/import-json.php')) ?>"><?= h(t('import_json')) ?></a>
   </div>
 <?php endif; ?>
 <?php include dirname(__DIR__) . '/includes/layout/footer.php'; ?>

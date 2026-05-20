@@ -12,12 +12,17 @@
 
     const bookmark = card.querySelector('.js-bookmark');
     const solved = card.querySelector('.js-solved');
+    const solvedBadge = card.querySelector('.solved-state-badge');
 
     function syncButton(button, storageKey) {
       if (!button) return;
       const active = localStorage.getItem(storageKey) === '1';
       button.classList.toggle('active', active);
       button.textContent = active ? button.dataset.active : button.dataset.default;
+      if (button === solved) {
+        card.classList.toggle('is-solved', active);
+        if (solvedBadge) solvedBadge.hidden = !active;
+      }
     }
 
     const bookmarkKey = key('bookmark', code);
@@ -33,6 +38,14 @@
     solved?.addEventListener('click', () => {
       localStorage.setItem(solvedKey, localStorage.getItem(solvedKey) === '1' ? '0' : '1');
       syncButton(solved, solvedKey);
+    });
+  });
+
+  document.querySelectorAll('.collapse').forEach((panel) => {
+    panel.addEventListener('shown.bs.collapse', () => {
+      if (window.MathJax?.typesetPromise) {
+        window.MathJax.typesetPromise([panel]).catch(() => {});
+      }
     });
   });
 

@@ -12,9 +12,8 @@ $isActive = ($course['status'] ?? '') === 'active';
       </span>
     </div>
     <div class="text-secondary flex-grow-1"><?= $course['summary_html'] ?? '' ?></div>
-    <a class="btn btn-primary mt-3 <?= $isActive ? '' : 'disabled' ?>" href="<?= h(app_url('course.php', ['course' => $course['slug'] ?? ''])) ?>">
+    <a class="btn btn-primary mt-3 <?= $isActive ? '' : 'disabled' ?>" href="<?= h(course_url((string)($course['slug'] ?? ''))) ?>">
       <?= h(t('open_course')) ?>
     </a>
   </div>
 </article>
-

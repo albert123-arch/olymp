@@ -5,7 +5,7 @@ require_once __DIR__ . '/includes/functions.php';
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (login_user((string)($_POST['email'] ?? ''), (string)($_POST['password'] ?? ''))) {
-        header('Location: ' . app_url('index.php'));
+        header('Location: ' . url('index.php'));
         exit;
     }
     $error = t('auth_error');
@@ -30,9 +30,8 @@ include __DIR__ . '/includes/layout/header.php';
         </div>
         <button class="btn btn-primary" type="submit"><?= h(t('login')) ?></button>
       </form>
-      <p class="mb-0 mt-3"><a href="<?= h(app_url('register.php')) ?>"><?= h(t('register')) ?></a></p>
+      <p class="mb-0 mt-3"><a href="<?= h(url('register.php')) ?>"><?= h(t('register')) ?></a></p>
     </div>
   </div>
 </section>
 <?php include __DIR__ . '/includes/layout/footer.php'; ?>
-

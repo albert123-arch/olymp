@@ -19,12 +19,13 @@ $searchText = strtolower(($problem['title'] ?? '') . ' ' . ($problem['problem_co
         <?php if (!empty($problem['problem_code'])): ?>
           <span class="problem-code"><?= h($problem['problem_code']) ?></span>
         <?php endif; ?>
-        <span class="problem-level"><?= h(t($levelKey)) ?></span>
+        <span class="problem-level"><?= h(difficulty_label((string)($problem['difficulty'] ?? 'core'))) ?></span>
         <span class="problem-kind"><?= h(t($typeKey)) ?></span>
       </div>
       <div class="problem-actions-secondary">
-        <button class="btn btn-sm btn-outline-secondary js-bookmark" type="button" data-default="<?= h(t('bookmark')) ?>" data-active="<?= h(t('bookmarked')) ?>"><?= h(t('bookmark')) ?></button>
-        <button class="btn btn-sm btn-outline-success js-solved" type="button" data-default="<?= h(t('mark_solved')) ?>" data-active="<?= h(t('solved')) ?>"><?= h(t('mark_solved')) ?></button>
+        <span class="badge text-bg-success solved-state-badge" hidden><?= h(t('solved')) ?></span>
+        <button class="btn btn-sm btn-outline-secondary problem-state-btn js-bookmark" type="button" data-default="<?= h(t('bookmark_action')) ?>" data-active="<?= h(t('bookmarked_action')) ?>"><?= h(t('bookmark_action')) ?></button>
+        <button class="btn btn-sm btn-outline-success problem-state-btn js-solved" type="button" data-default="<?= h(t('mark_solved_action')) ?>" data-active="<?= h(t('solved_action')) ?>"><?= h(t('mark_solved_action')) ?></button>
       </div>
     </div>
     <h2 class="problem-heading"><?= h($problem['title'] ?? '') ?></h2>
@@ -33,7 +34,7 @@ $searchText = strtolower(($problem['title'] ?? '') . ' ' . ($problem['problem_co
     <?php if ($tags): ?>
       <div class="d-flex flex-wrap gap-1 my-3">
         <?php foreach ($tags as $tag): ?>
-          <span class="badge rounded-pill text-bg-light border"><?= h($tag) ?></span>
+          <span class="badge rounded-pill problem-tag"><?= h(tag_label($tag)) ?></span>
         <?php endforeach; ?>
       </div>
     <?php endif; ?>
@@ -44,17 +45,17 @@ $searchText = strtolower(($problem['title'] ?? '') . ' ' . ($problem['problem_co
       <?php if (!empty($problem['solution_html'])): ?>
         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#solution-<?= h($cardId) ?>" type="button" aria-expanded="false"><?= h(t('solution')) ?></button>
       <?php endif; ?>
-      <a class="btn btn-sm btn-link" href="<?= h(app_url('problem.php', ['code' => $problem['problem_code'] ?? ''])) ?>"><?= h(t('open_problem')) ?></a>
+      <a class="btn btn-sm btn-outline-dark" href="<?= h(problem_url((string)($problem['problem_code'] ?? ''))) ?>"><?= h(t('open_problem')) ?></a>
     </div>
     <?php if (!empty($problem['hint_html'])): ?>
-      <div class="collapse reveal-box mt-3" id="hint-<?= h($cardId) ?>">
+      <div class="collapse reveal-box reveal-hint mt-3" id="hint-<?= h($cardId) ?>">
         <h3 class="h6"><?= h(t('hint')) ?></h3>
         <?= $problem['hint_html'] ?>
         <?php $mediaItems = fetch_problem_media((int)($problem['id'] ?? 0), 'hint'); include __DIR__ . '/media-renderer.php'; ?>
       </div>
     <?php endif; ?>
     <?php if (!empty($problem['solution_html'])): ?>
-      <div class="collapse reveal-box mt-3" id="solution-<?= h($cardId) ?>">
+      <div class="collapse reveal-box reveal-solution mt-3" id="solution-<?= h($cardId) ?>">
         <h3 class="h6"><?= h(t('solution')) ?></h3>
         <?= $problem['solution_html'] ?>
         <?php $mediaItems = fetch_problem_media((int)($problem['id'] ?? 0), 'solution'); include __DIR__ . '/media-renderer.php'; ?>

@@ -10,7 +10,7 @@ include __DIR__ . '/includes/layout/header.php';
   <?php render_db_notice(); ?>
 <?php else: ?>
   <div class="mb-4">
-    <a href="<?= h(app_url('index.php')) ?>" class="link-secondary"><?= h(t('back')) ?></a>
+    <a href="<?= h(url('index.php')) ?>" class="link-secondary"><?= h(t('back')) ?></a>
     <h1 class="fw-bold mt-2"><?= h($course['title']) ?></h1>
     <div class="lead text-secondary"><?= $course['summary_html'] ?></div>
   </div>
@@ -32,7 +32,8 @@ include __DIR__ . '/includes/layout/header.php';
       </div>
     </section>
     <section class="tab-pane fade" id="practice">
-      <?php foreach (fetch_problems() as $problem): ?>
+      <p><a class="btn btn-outline-primary" href="<?= h(practice_url((string)$course['slug'])) ?>"><?= h(t('practice')) ?></a></p>
+      <?php foreach (fetch_problems(null, (int)$course['id']) as $problem): ?>
         <?php include __DIR__ . '/includes/components/problem-card.php'; ?>
       <?php endforeach; ?>
     </section>
@@ -41,4 +42,3 @@ include __DIR__ . '/includes/layout/header.php';
   </div>
 <?php endif; ?>
 <?php include __DIR__ . '/includes/layout/footer.php'; ?>
-

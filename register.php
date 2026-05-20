@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         (string)($_POST['password'] ?? '')
     );
     if ($ok) {
-        header('Location: ' . app_url('index.php'));
+        header('Location: ' . url('index.php'));
         exit;
     }
     $error = $message;
@@ -39,9 +39,8 @@ include __DIR__ . '/includes/layout/header.php';
         </div>
         <button class="btn btn-primary" type="submit"><?= h(t('register')) ?></button>
       </form>
-      <p class="mb-0 mt-3"><a href="<?= h(app_url('login.php')) ?>"><?= h(t('login')) ?></a></p>
+      <p class="mb-0 mt-3"><a href="<?= h(url('login.php')) ?>"><?= h(t('login')) ?></a></p>
     </div>
   </div>
 </section>
 <?php include __DIR__ . '/includes/layout/footer.php'; ?>
-

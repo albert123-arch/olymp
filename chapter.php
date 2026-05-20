@@ -11,7 +11,7 @@ include __DIR__ . '/includes/layout/header.php';
   <?php render_db_notice(); ?>
 <?php else: ?>
   <div class="mb-4">
-    <a href="<?= h(app_url('course.php', ['course' => $courseSlug])) ?>" class="link-secondary"><?= h(t('back')) ?></a>
+    <a href="<?= h(course_url($courseSlug)) ?>" class="link-secondary"><?= h(t('back')) ?></a>
     <h1 class="fw-bold mt-2"><?= h($chapter['title']) ?></h1>
     <div class="lead text-secondary"><?= $chapter['summary_html'] ?></div>
   </div>
@@ -28,6 +28,7 @@ include __DIR__ . '/includes/layout/header.php';
     <section class="tab-pane fade" id="practice">
       <?php $problems = fetch_problems((int)$chapter['id']); ?>
       <?php if (!$problems): ?><p class="text-secondary"><?= h(t('no_records')) ?></p><?php endif; ?>
+      <p><a class="btn btn-outline-primary" href="<?= h(practice_url($courseSlug, $chapterSlug)) ?>"><?= h(t('practice')) ?></a></p>
       <div class="toolbar practice-toolbar">
         <label><span><?= h(t('search')) ?></span><input id="searchInput" type="search" class="form-control" autocomplete="off"></label>
         <label><span><?= h(t('difficulty')) ?></span><select id="difficultyFilter" class="form-select"><option value=""><?= h(t('all')) ?></option><option value="level1"><?= h(t('level1')) ?></option><option value="level2"><?= h(t('level2')) ?></option><option value="level3"><?= h(t('level3')) ?></option></select></label>

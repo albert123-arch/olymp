@@ -40,10 +40,22 @@ body {
 }
 
 .reveal-box {
+  border: 1px solid var(--om-line);
   border-left: 4px solid var(--om-accent);
-  background: #f8fbff;
   padding: 1rem;
   border-radius: 6px;
+}
+
+.reveal-hint {
+  background: #fff8e7;
+  border-color: #f2dfaa;
+  border-left-color: #d59619;
+}
+
+.reveal-solution {
+  background: #ecfbf7;
+  border-color: #b9eee0;
+  border-left-color: #15906f;
 }
 
 .problem-media {
@@ -74,7 +86,22 @@ body {
 }
 
 .compact-problem-card .card-body {
-  padding: 1rem;
+  padding: 1.1rem;
+}
+
+.compact-problem-card {
+  overflow: hidden;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.compact-problem-card:hover {
+  border-color: #cbd6e4;
+  box-shadow: 0 .55rem 1.35rem rgba(23, 32, 51, .08) !important;
+}
+
+.compact-problem-card.is-solved {
+  border-color: #a9dfc1;
+  background: linear-gradient(90deg, rgba(235, 250, 241, .8), #fff 28%);
 }
 
 .problem-title-row {
@@ -91,6 +118,10 @@ body {
   flex-wrap: wrap;
   gap: .4rem;
   align-items: center;
+}
+
+.problem-actions-secondary {
+  justify-content: flex-end;
 }
 
 .problem-code,
@@ -112,13 +143,23 @@ body {
 }
 
 .problem-heading {
-  font-size: 1.05rem;
+  font-size: 1.12rem;
   line-height: 1.35;
   margin-bottom: .6rem;
+  font-weight: 700;
 }
 
 .statement {
   color: #273246;
+  line-height: 1.65;
+  overflow-x: auto;
+}
+
+.problem-tag {
+  background: #f7f8fb;
+  border: 1px solid var(--om-line);
+  color: #4f5d73;
+  font-weight: 600;
 }
 
 .actions {
@@ -126,6 +167,21 @@ body {
   flex-wrap: wrap;
   gap: .5rem;
   margin-top: .8rem;
+}
+
+.problem-state-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.solved-state-badge {
+  align-self: center;
+}
+
+.mjx-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
 }
 
 .nav-tabs .nav-link {
@@ -164,5 +220,14 @@ textarea.form-control {
 
   .problem-title-row {
     display: grid;
+  }
+
+  .problem-actions-secondary {
+    justify-content: flex-start;
+  }
+
+  .problem-state-btn,
+  .actions .btn {
+    width: auto;
   }
 }

@@ -10,7 +10,7 @@ $user = current_user();
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= h($pageTitle) ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="/assets/styles.css" rel="stylesheet">
+  <link href="<?= h(asset_url('assets/styles.css')) ?>" rel="stylesheet">
   <script>
     window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] } };
     localStorage.setItem('olymp_lang', <?= json_encode(current_lang()) ?>);
@@ -20,29 +20,37 @@ $user = current_user();
 <body>
 <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="<?= h(app_url('index.php')) ?>"><?= h(t('site_title')) ?></a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav" aria-controls="topNav" aria-expanded="false" aria-label="Menu">
+    <a class="navbar-brand fw-bold" href="<?= h(url('index.php')) ?>"><?= h(t('site_title')) ?></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav" aria-controls="topNav" aria-expanded="false" aria-label="<?= h(t('menu')) ?>">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="topNav">
       <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="<?= h(app_url('index.php')) ?>"><?= h(t('home')) ?></a></li>
-        <li class="nav-item"><a class="nav-link" href="<?= h(app_url('practice.php')) ?>"><?= h(t('practice')) ?></a></li>
+        <li class="nav-item"><a class="nav-link" href="<?= h(url('index.php')) ?>"><?= h(t('home')) ?></a></li>
+        <li class="nav-item"><a class="nav-link" href="<?= h(practice_url('number-theory')) ?>"><?= h(t('practice')) ?></a></li>
         <?php if (user_can_manage_content($user)): ?>
-          <li class="nav-item"><a class="nav-link" href="<?= h(app_url('admin/index.php')) ?>"><?= h(t('admin')) ?></a></li>
+          <li class="nav-item"><a class="nav-link" href="<?= h(url('admin/index.php')) ?>"><?= h(t('admin')) ?></a></li>
         <?php endif; ?>
       </ul>
       <div class="d-flex align-items-center gap-2">
         <?php if ($user): ?>
           <span class="text-secondary small"><?= h($user['name']) ?> · <?= h(t('role_' . $user['role'])) ?></span>
-          <a class="btn btn-sm btn-outline-secondary" href="<?= h(app_url('logout.php')) ?>"><?= h(t('logout')) ?></a>
+          <a class="btn btn-sm btn-outline-secondary" href="<?= h(url('logout.php')) ?>"><?= h(t('logout')) ?></a>
         <?php else: ?>
-          <a class="btn btn-sm btn-outline-secondary" href="<?= h(app_url('login.php')) ?>"><?= h(t('login')) ?></a>
-          <a class="btn btn-sm btn-outline-primary" href="<?= h(app_url('register.php')) ?>"><?= h(t('register')) ?></a>
+          <a class="btn btn-sm btn-outline-secondary" href="<?= h(url('login.php')) ?>"><?= h(t('login')) ?></a>
+          <a class="btn btn-sm btn-outline-primary" href="<?= h(url('register.php')) ?>"><?= h(t('register')) ?></a>
         <?php endif; ?>
         <span class="text-secondary small"><?= h(t('language')) ?></span>
-        <a class="btn btn-sm <?= current_lang() === 'en' ? 'btn-dark' : 'btn-outline-dark' ?>" href="?<?= h(http_build_query(array_merge($_GET, ['lang' => 'en']))) ?>">EN</a>
-        <a class="btn btn-sm <?= current_lang() === 'ru' ? 'btn-dark' : 'btn-outline-dark' ?>" href="?<?= h(http_build_query(array_merge($_GET, ['lang' => 'ru']))) ?>">RU</a>
+        <?php
+          $scriptName = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
+          $baseUrl = app_base_url();
+          $currentPath = ltrim($scriptName, '/');
+          if ($baseUrl !== '' && str_starts_with($scriptName, $baseUrl . '/')) {
+              $currentPath = ltrim(substr($scriptName, strlen($baseUrl)), '/');
+          }
+        ?>
+        <a class="btn btn-sm <?= current_lang() === 'en' ? 'btn-dark' : 'btn-outline-dark' ?>" href="<?= h(url($currentPath, array_merge($_GET, ['lang' => 'en']))) ?>">EN</a>
+        <a class="btn btn-sm <?= current_lang() === 'ru' ? 'btn-dark' : 'btn-outline-dark' ?>" href="<?= h(url($currentPath, array_merge($_GET, ['lang' => 'ru']))) ?>">RU</a>
       </div>
     </div>
   </div>

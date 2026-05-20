@@ -18,7 +18,7 @@ if (db_available() && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 ->execute([$id, $lang, $_POST["title_$lang"], $_POST["summary_$lang"], $_POST["overview_$lang"], $_POST["teacher_$lang"]]);
         }
     }
-    header('Location: ' . app_url('admin/courses.php'));
+    header('Location: ' . url('admin/courses.php'));
     exit;
 }
 $pageTitle = t('courses') . ' | ' . t('admin');

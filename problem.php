@@ -9,7 +9,7 @@ include __DIR__ . '/includes/layout/header.php';
 <?php if (!$problem): ?>
   <?php render_db_notice(); ?>
 <?php else: ?>
-  <a href="<?= h(app_url('chapter.php', ['course' => $problem['course_slug'], 'chapter' => $problem['chapter_slug']])) ?>" class="link-secondary"><?= h(t('back')) ?></a>
+  <a href="<?= h(chapter_url((string)$problem['course_slug'], (string)$problem['chapter_slug'])) ?>" class="link-secondary"><?= h(t('back')) ?></a>
   <div class="mt-3">
     <?php include __DIR__ . '/includes/components/problem-card.php'; ?>
   </div>

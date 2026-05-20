@@ -23,7 +23,7 @@ if (db_available() && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $tagId = (int)db()->query('SELECT id FROM tags WHERE slug=' . db()->quote($tag))->fetchColumn();
         db()->prepare('INSERT IGNORE INTO problem_tags (problem_id, tag_id) VALUES (?,?)')->execute([$id, $tagId]);
     }
-    header('Location: ' . app_url('admin/problems.php'));
+    header('Location: ' . url('admin/problems.php'));
     exit;
 }
 $problem = null;

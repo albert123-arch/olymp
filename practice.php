@@ -1,6 +1,11 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/includes/functions.php';
+$courseSlug = (string)($_GET['course'] ?? 'number-theory');
+$chapterSlug = (string)($_GET['chapter'] ?? '');
+$course = db_available() ? fetch_course($courseSlug) : null;
+$chapter = db_available() && $chapterSlug !== '' ? fetch_chapter($courseSlug, $chapterSlug) : null;
+$problems = db_available() && $course ? fetch_problems($chapter ? (int)$chapter['id'] : null, (int)$course['id']) : [];
 $pageTitle = t('practice') . ' | ' . t('site_title');
 include __DIR__ . '/includes/layout/header.php';
 ?>
@@ -33,7 +38,7 @@ include __DIR__ . '/includes/layout/header.php';
       </select>
     </label>
   </div>
-  <?php foreach (fetch_problems() as $problem): ?>
+  <?php foreach ($problems as $problem): ?>
     <?php include __DIR__ . '/includes/components/problem-card.php'; ?>
   <?php endforeach; ?>
 <?php endif; ?>

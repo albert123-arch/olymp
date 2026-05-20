@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 $chapter = $chapter ?? [];
+$courseSlug = (string)($chapter['course_slug'] ?? ($_GET['course'] ?? 'number-theory'));
+$chapterSlug = (string)($chapter['slug'] ?? '');
 ?>
 <article class="card chapter-card h-100 shadow-sm">
   <div class="card-body">
@@ -9,9 +11,8 @@ $chapter = $chapter ?? [];
       <span class="badge text-bg-light border"><?= h(t('chapters')) ?></span>
     </div>
     <div class="text-secondary mb-3"><?= $chapter['summary_html'] ?? '' ?></div>
-    <a class="btn btn-outline-primary" href="<?= h(app_url('chapter.php', ['course' => $chapter['course_slug'] ?? ($_GET['course'] ?? 'number-theory'), 'chapter' => $chapter['slug'] ?? ''])) ?>">
+    <a class="btn btn-outline-primary" href="<?= h(chapter_url($courseSlug, $chapterSlug)) ?>">
       <?= h(t('open_chapter')) ?>
     </a>
   </div>
 </article>
-
