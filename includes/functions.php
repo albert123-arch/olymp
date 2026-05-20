@@ -241,10 +241,10 @@ function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
                 JOIN tags t ON t.id = ptag.tag_id
                 GROUP BY ptag.problem_id
             ) tag_list ON tag_list.problem_id = p.id
-            LEFT JOIN bookmarks bm ON bm.problem_id = p.id AND bm.user_id = :user_id
-            LEFT JOIN user_problem_progress upp ON upp.problem_id = p.id AND upp.user_id = :user_id
+            LEFT JOIN bookmarks bm ON bm.problem_id = p.id AND bm.user_id = :bookmark_user_id
+            LEFT JOIN user_problem_progress upp ON upp.problem_id = p.id AND upp.user_id = :progress_user_id
             WHERE p.is_published = 1';
-    $params = ['lang' => current_lang(), 'user_id' => $userId];
+    $params = ['lang' => current_lang(), 'bookmark_user_id' => $userId, 'progress_user_id' => $userId];
     if ($chapterId !== null) {
         $sql .= ' AND p.chapter_id = :chapter_id';
         $params['chapter_id'] = $chapterId;
@@ -277,12 +277,12 @@ function fetch_problem(string $code): ?array
              JOIN tags t ON t.id = ptag.tag_id
              GROUP BY ptag.problem_id
          ) tag_list ON tag_list.problem_id = p.id
-         LEFT JOIN bookmarks bm ON bm.problem_id = p.id AND bm.user_id = :user_id
-         LEFT JOIN user_problem_progress upp ON upp.problem_id = p.id AND upp.user_id = :user_id
+         LEFT JOIN bookmarks bm ON bm.problem_id = p.id AND bm.user_id = :bookmark_user_id
+         LEFT JOIN user_problem_progress upp ON upp.problem_id = p.id AND upp.user_id = :progress_user_id
          WHERE p.problem_code = :code AND p.is_published = 1
          LIMIT 1'
     );
-    $stmt->execute(['lang' => current_lang(), 'code' => $code, 'user_id' => $userId]);
+    $stmt->execute(['lang' => current_lang(), 'code' => $code, 'bookmark_user_id' => $userId, 'progress_user_id' => $userId]);
     $row = $stmt->fetch();
     return $row ?: null;
 }
