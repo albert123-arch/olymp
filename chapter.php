@@ -18,7 +18,7 @@ include __DIR__ . '/includes/layout/header.php';
   <ul class="nav nav-tabs" role="tablist">
     <?php foreach (['theory', 'examples', 'practice', 'worksheet', 'teacher_notes'] as $i => $key): ?>
       <li class="nav-item" role="presentation">
-        <button class="nav-link <?= $i === 0 ? 'active' : '' ?>" data-bs-toggle="tab" data-bs-target="#<?= h($key) ?>" type="button"><?= h(t($key)) ?></button>
+        <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" data-bs-toggle="tab" data-bs-target="#<?= h($key) ?>" href="#<?= h($key) ?>" role="tab" aria-controls="<?= h($key) ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>"><?= h(t($key)) ?></a>
       </li>
     <?php endforeach; ?>
   </ul>

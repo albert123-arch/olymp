@@ -108,4 +108,16 @@
     el?.addEventListener('input', filterProblems);
     el?.addEventListener('change', filterProblems);
   });
+
+  function activateTabFromHash() {
+    const hash = window.location.hash;
+    if (!hash) return;
+    const trigger = document.querySelector(`.nav-tabs [data-bs-toggle="tab"][href="${hash}"], .nav-tabs [data-bs-toggle="tab"][data-bs-target="${hash}"]`);
+    if (!trigger) return;
+    const tab = bootstrap.Tab.getOrCreateInstance(trigger);
+    tab.show();
+  }
+
+  window.addEventListener('hashchange', activateTabFromHash);
+  activateTabFromHash();
 })();
