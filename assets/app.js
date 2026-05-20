@@ -6,17 +6,27 @@
     return `olymp_${type}_${code}`;
   }
 
+  async function postState(url, payload) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'same-origin',
+      body: JSON.stringify(payload),
+    });
+    return response.json();
+  }
+
   document.querySelectorAll('.problem-card').forEach((card) => {
     const code = card.dataset.problemCode;
     if (!code) return;
 
+    const problemId = Number(card.dataset.problemId || 0);
     const bookmark = card.querySelector('.js-bookmark');
     const solved = card.querySelector('.js-solved');
     const solvedBadge = card.querySelector('.solved-state-badge');
 
-    function syncButton(button, storageKey) {
+    function syncButton(button, active) {
       if (!button) return;
-      const active = localStorage.getItem(storageKey) === '1';
       button.classList.toggle('active', active);
       const label = active ? button.dataset.active : button.dataset.default;
       button.setAttribute('aria-label', label);
@@ -29,17 +39,45 @@
 
     const bookmarkKey = key('bookmark', code);
     const solvedKey = key('solved', code);
-    syncButton(bookmark, bookmarkKey);
-    syncButton(solved, solvedKey);
+    let isBookmarked = bookmark?.dataset.apiUrl ? card.dataset.bookmarked === '1' : localStorage.getItem(bookmarkKey) === '1';
+    let isSolved = solved?.dataset.apiUrl ? card.dataset.solved === '1' : localStorage.getItem(solvedKey) === '1';
+    syncButton(bookmark, isBookmarked);
+    syncButton(solved, isSolved);
 
-    bookmark?.addEventListener('click', () => {
-      localStorage.setItem(bookmarkKey, localStorage.getItem(bookmarkKey) === '1' ? '0' : '1');
-      syncButton(bookmark, bookmarkKey);
+    bookmark?.addEventListener('click', async () => {
+      const next = !isBookmarked;
+      if (bookmark.dataset.apiUrl && problemId > 0) {
+        bookmark.disabled = true;
+        try {
+          const data = await postState(bookmark.dataset.apiUrl, {problem_id: problemId, bookmarked: next});
+          if (data.ok) isBookmarked = !!data.bookmarked;
+        } catch (e) {
+        } finally {
+          bookmark.disabled = false;
+        }
+      } else {
+        isBookmarked = next;
+        localStorage.setItem(bookmarkKey, isBookmarked ? '1' : '0');
+      }
+      syncButton(bookmark, isBookmarked);
     });
 
-    solved?.addEventListener('click', () => {
-      localStorage.setItem(solvedKey, localStorage.getItem(solvedKey) === '1' ? '0' : '1');
-      syncButton(solved, solvedKey);
+    solved?.addEventListener('click', async () => {
+      const next = !isSolved;
+      if (solved.dataset.apiUrl && problemId > 0) {
+        solved.disabled = true;
+        try {
+          const data = await postState(solved.dataset.apiUrl, {problem_id: problemId, solved: next});
+          if (data.ok) isSolved = data.status === 'solved';
+        } catch (e) {
+        } finally {
+          solved.disabled = false;
+        }
+      } else {
+        isSolved = next;
+        localStorage.setItem(solvedKey, isSolved ? '1' : '0');
+      }
+      syncButton(solved, isSolved);
     });
   });
 

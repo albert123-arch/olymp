@@ -168,6 +168,11 @@ body {
   width: 2rem;
 }
 
+.problem-icon-btn:disabled {
+  cursor: wait;
+  opacity: .55;
+}
+
 .problem-icon-btn:focus-visible {
   border-radius: 999px;
   outline: 3px solid rgba(34, 87, 166, .2);

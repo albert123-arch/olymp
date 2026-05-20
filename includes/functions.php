@@ -228,8 +228,11 @@ function fetch_chapter(string $courseSlug, string $chapterSlug): ?array
 
 function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
 {
+    $userId = (int)($_SESSION['user_id'] ?? 0);
     $sql = 'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
-                   COALESCE(tag_list.tags_csv, "") AS tags_csv
+                   COALESCE(tag_list.tags_csv, "") AS tags_csv,
+                   CASE WHEN bm.user_id IS NULL THEN 0 ELSE 1 END AS is_bookmarked,
+                   upp.status AS progress_status
             FROM problems p
             JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
             LEFT JOIN (
@@ -238,8 +241,10 @@ function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
                 JOIN tags t ON t.id = ptag.tag_id
                 GROUP BY ptag.problem_id
             ) tag_list ON tag_list.problem_id = p.id
+            LEFT JOIN bookmarks bm ON bm.problem_id = p.id AND bm.user_id = :user_id
+            LEFT JOIN user_problem_progress upp ON upp.problem_id = p.id AND upp.user_id = :user_id
             WHERE p.is_published = 1';
-    $params = ['lang' => current_lang()];
+    $params = ['lang' => current_lang(), 'user_id' => $userId];
     if ($chapterId !== null) {
         $sql .= ' AND p.chapter_id = :chapter_id';
         $params['chapter_id'] = $chapterId;
@@ -255,10 +260,13 @@ function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
 
 function fetch_problem(string $code): ?array
 {
+    $userId = (int)($_SESSION['user_id'] ?? 0);
     $stmt = db()->prepare(
         'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
                 ch.slug AS chapter_slug, c.slug AS course_slug,
-                COALESCE(tag_list.tags_csv, "") AS tags_csv
+                COALESCE(tag_list.tags_csv, "") AS tags_csv,
+                CASE WHEN bm.user_id IS NULL THEN 0 ELSE 1 END AS is_bookmarked,
+                upp.status AS progress_status
          FROM problems p
          JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
          JOIN chapters ch ON ch.id = p.chapter_id
@@ -269,10 +277,12 @@ function fetch_problem(string $code): ?array
              JOIN tags t ON t.id = ptag.tag_id
              GROUP BY ptag.problem_id
          ) tag_list ON tag_list.problem_id = p.id
+         LEFT JOIN bookmarks bm ON bm.problem_id = p.id AND bm.user_id = :user_id
+         LEFT JOIN user_problem_progress upp ON upp.problem_id = p.id AND upp.user_id = :user_id
          WHERE p.problem_code = :code AND p.is_published = 1
          LIMIT 1'
     );
-    $stmt->execute(['lang' => current_lang(), 'code' => $code]);
+    $stmt->execute(['lang' => current_lang(), 'code' => $code, 'user_id' => $userId]);
     $row = $stmt->fetch();
     return $row ?: null;
 }
