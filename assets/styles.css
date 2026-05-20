@@ -42,10 +42,24 @@ body {
 .reveal-details summary {
   color: var(--om-ink);
   cursor: pointer;
+  display: block;
+  width: 100%;
   font-size: 1.02rem;
   font-weight: 500;
   line-height: 1.3;
   user-select: none;
+}
+
+.reveal-details-right summary {
+  text-align: right;
+}
+
+.reveal-details-right[open] summary {
+  text-align: right;
+}
+
+.reveal-details-right[open] .reveal-content {
+  text-align: left;
 }
 
 .reveal-content {
