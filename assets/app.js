@@ -109,24 +109,23 @@
     el?.addEventListener('change', filterProblems);
   });
 
-  function activateTabFromHash() {
-    const hash = window.location.hash;
-    if (!hash) return;
-    const trigger = document.querySelector(`.nav-tabs [data-bs-toggle="tab"][href="${hash}"], .nav-tabs [data-bs-toggle="tab"][data-bs-target="${hash}"]`);
-    const target = document.querySelector(hash);
-    if (!trigger || !target) return;
+  function setActiveTab(trigger) {
+    const targetSelector = trigger.getAttribute('data-bs-target') || trigger.getAttribute('href');
+    if (!targetSelector || !targetSelector.startsWith('#')) return;
+    const target = document.querySelector(targetSelector);
+    if (!target) return;
 
-    const activateManually = () => {
-      document.querySelectorAll('.nav-tabs .nav-link.active').forEach((el) => el.classList.remove('active'));
-      document.querySelectorAll('.tab-content .tab-pane.active.show').forEach((el) => el.classList.remove('active', 'show'));
-      trigger.classList.add('active');
-      trigger.setAttribute('aria-selected', 'true');
-      document.querySelectorAll('.nav-tabs .nav-link').forEach((el) => {
-        if (el !== trigger) el.setAttribute('aria-selected', 'false');
-      });
-      target.classList.add('active', 'show');
-    };
+    document.querySelectorAll('.nav-tabs .nav-link.active').forEach((el) => el.classList.remove('active'));
+    document.querySelectorAll('.tab-content .tab-pane.active.show').forEach((el) => el.classList.remove('active', 'show'));
+    trigger.classList.add('active');
+    trigger.setAttribute('aria-selected', 'true');
+    document.querySelectorAll('.nav-tabs .nav-link').forEach((el) => {
+      if (el !== trigger) el.setAttribute('aria-selected', 'false');
+    });
+    target.classList.add('active', 'show');
+  }
 
+  function showTab(trigger) {
     try {
       const tab = bootstrap?.Tab?.getOrCreateInstance(trigger);
       if (tab && typeof tab.show === 'function') {
@@ -134,14 +133,28 @@
         return;
       }
     } catch (error) {
-      // fallback below
+      // ignore and fallback to manual activation
     }
+    setActiveTab(trigger);
+  }
 
-    if (typeof trigger.click === 'function') {
-      trigger.click();
-    } else {
-      activateManually();
-    }
+  document.querySelectorAll('.nav-tabs [data-bs-toggle="tab"]').forEach((trigger) => {
+    trigger.addEventListener('click', (event) => {
+      event.preventDefault();
+      showTab(trigger);
+      const href = trigger.getAttribute('href');
+      if (href && href.startsWith('#')) {
+        history.replaceState(null, '', href);
+      }
+    });
+  });
+
+  function activateTabFromHash() {
+    const hash = window.location.hash;
+    if (!hash) return;
+    const trigger = document.querySelector(`.nav-tabs [data-bs-toggle="tab"][href="${hash}"], .nav-tabs [data-bs-toggle="tab"][data-bs-target="${hash}"]`);
+    if (!trigger) return;
+    showTab(trigger);
   }
 
   window.addEventListener('hashchange', activateTabFromHash);
