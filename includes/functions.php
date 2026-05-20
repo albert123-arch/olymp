@@ -301,7 +301,7 @@ function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
     $sql .= ' ORDER BY p.sort_order, p.id';
     $stmt = db()->prepare($sql);
     $stmt->execute($params);
-    return attach_user_problem_state($stmt->fetchAll());
+    return $stmt->fetchAll();
 }
 
 function fetch_problem(string $code): ?array
@@ -325,64 +325,7 @@ function fetch_problem(string $code): ?array
     );
     $stmt->execute(['lang' => current_lang(), 'code' => $code]);
     $row = $stmt->fetch();
-    if (!$row) {
-        return null;
-    }
-
-    $rows = attach_user_problem_state([$row]);
-    return $rows[0] ?? $row;
-}
-
-function attach_user_problem_state(array $problems): array
-{
-    $userId = (int)($_SESSION['user_id'] ?? 0);
-    foreach ($problems as &$problem) {
-        $problem['is_bookmarked'] = 0;
-        $problem['progress_status'] = null;
-    }
-    unset($problem);
-
-    if ($userId <= 0 || !$problems) {
-        return $problems;
-    }
-
-    $ids = array_values(array_unique(array_map(static fn(array $row): int => (int)($row['id'] ?? 0), $problems)));
-    $ids = array_values(array_filter($ids, static fn(int $id): bool => $id > 0));
-    if (!$ids) {
-        return $problems;
-    }
-
-    $userTables = db_has_user_problem_tables();
-    $placeholders = implode(',', array_fill(0, count($ids), '?'));
-
-    try {
-        if ($userTables['bookmarks']) {
-            $stmt = db()->prepare("SELECT problem_id FROM bookmarks WHERE user_id = ? AND problem_id IN ($placeholders)");
-            $stmt->execute(array_merge([$userId], $ids));
-            $bookmarks = array_flip(array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN)));
-            foreach ($problems as &$problem) {
-                $problem['is_bookmarked'] = isset($bookmarks[(int)($problem['id'] ?? 0)]) ? 1 : 0;
-            }
-            unset($problem);
-        }
-
-        if ($userTables['progress']) {
-            $stmt = db()->prepare("SELECT problem_id, status FROM user_problem_progress WHERE user_id = ? AND problem_id IN ($placeholders)");
-            $stmt->execute(array_merge([$userId], $ids));
-            $progress = [];
-            foreach ($stmt->fetchAll() as $row) {
-                $progress[(int)$row['problem_id']] = (string)$row['status'];
-            }
-            foreach ($problems as &$problem) {
-                $problem['progress_status'] = $progress[(int)($problem['id'] ?? 0)] ?? null;
-            }
-            unset($problem);
-        }
-    } catch (Throwable $e) {
-        error_log('Failed to attach user problem state: ' . $e->getMessage());
-    }
-
-    return $problems;
+    return $row ?: null;
 }
 
 function fetch_problem_media(int $problemId, string $role): array
