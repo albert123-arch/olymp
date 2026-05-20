@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/includes/functions.php';
+require_content_manager();
 $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
 if (db_available() && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($id > 0) {

@@ -35,5 +35,28 @@
       syncButton(solved, solvedKey);
     });
   });
-})();
 
+  const searchInput = document.getElementById('searchInput');
+  const difficultyFilter = document.getElementById('difficultyFilter');
+  const typeFilter = document.getElementById('typeFilter');
+  const tagFilter = document.getElementById('tagFilter');
+
+  function filterProblems() {
+    const query = (searchInput?.value || '').trim().toLowerCase();
+    const difficulty = difficultyFilter?.value || '';
+    const type = typeFilter?.value || '';
+    const tag = tagFilter?.value || '';
+    document.querySelectorAll('.problem-card').forEach((card) => {
+      const okSearch = !query || (card.dataset.search || '').includes(query);
+      const okDifficulty = !difficulty || card.dataset.difficulty === difficulty;
+      const okType = !type || card.dataset.type === type;
+      const okTag = !tag || (` ${card.dataset.tags || ''} `).includes(` ${tag} `);
+      card.hidden = !(okSearch && okDifficulty && okType && okTag);
+    });
+  }
+
+  [searchInput, difficultyFilter, typeFilter, tagFilter].forEach((el) => {
+    el?.addEventListener('input', filterProblems);
+    el?.addEventListener('change', filterProblems);
+  });
+})();

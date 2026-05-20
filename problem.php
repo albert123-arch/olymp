@@ -13,7 +13,7 @@ include __DIR__ . '/includes/layout/header.php';
   <div class="mt-3">
     <?php include __DIR__ . '/includes/components/problem-card.php'; ?>
   </div>
-  <?php if (!empty($problem['teacher_note_html'])): ?>
+  <?php if (!empty($problem['teacher_note_html']) && user_can_manage_content()): ?>
     <section class="card border-warning mt-3">
       <div class="card-body">
         <h2 class="h5"><?= h(t('teacher_notes')) ?></h2>
@@ -24,4 +24,3 @@ include __DIR__ . '/includes/layout/header.php';
   <?php endif; ?>
 <?php endif; ?>
 <?php include __DIR__ . '/includes/layout/footer.php'; ?>
-

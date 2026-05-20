@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/includes/functions.php';
+require_content_manager();
 $pageTitle = t('admin_dashboard') . ' | ' . t('site_title');
 include dirname(__DIR__) . '/includes/layout/header.php';
 ?>

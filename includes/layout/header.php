@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 $pageTitle = $pageTitle ?? t('site_title');
+$user = current_user();
 ?>
 <!doctype html>
 <html lang="<?= h(current_lang()) ?>">
@@ -27,9 +28,18 @@ $pageTitle = $pageTitle ?? t('site_title');
       <ul class="navbar-nav me-auto">
         <li class="nav-item"><a class="nav-link" href="<?= h(app_url('index.php')) ?>"><?= h(t('home')) ?></a></li>
         <li class="nav-item"><a class="nav-link" href="<?= h(app_url('practice.php')) ?>"><?= h(t('practice')) ?></a></li>
-        <li class="nav-item"><a class="nav-link" href="<?= h(app_url('admin/index.php')) ?>"><?= h(t('admin')) ?></a></li>
+        <?php if (user_can_manage_content($user)): ?>
+          <li class="nav-item"><a class="nav-link" href="<?= h(app_url('admin/index.php')) ?>"><?= h(t('admin')) ?></a></li>
+        <?php endif; ?>
       </ul>
       <div class="d-flex align-items-center gap-2">
+        <?php if ($user): ?>
+          <span class="text-secondary small"><?= h($user['name']) ?> · <?= h(t('role_' . $user['role'])) ?></span>
+          <a class="btn btn-sm btn-outline-secondary" href="<?= h(app_url('logout.php')) ?>"><?= h(t('logout')) ?></a>
+        <?php else: ?>
+          <a class="btn btn-sm btn-outline-secondary" href="<?= h(app_url('login.php')) ?>"><?= h(t('login')) ?></a>
+          <a class="btn btn-sm btn-outline-primary" href="<?= h(app_url('register.php')) ?>"><?= h(t('register')) ?></a>
+        <?php endif; ?>
         <span class="text-secondary small"><?= h(t('language')) ?></span>
         <a class="btn btn-sm <?= current_lang() === 'en' ? 'btn-dark' : 'btn-outline-dark' ?>" href="?<?= h(http_build_query(array_merge($_GET, ['lang' => 'en']))) ?>">EN</a>
         <a class="btn btn-sm <?= current_lang() === 'ru' ? 'btn-dark' : 'btn-outline-dark' ?>" href="?<?= h(http_build_query(array_merge($_GET, ['lang' => 'ru']))) ?>">RU</a>
@@ -38,4 +48,3 @@ $pageTitle = $pageTitle ?? t('site_title');
   </div>
 </nav>
 <main class="container py-4">
-

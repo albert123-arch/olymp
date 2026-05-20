@@ -28,13 +28,23 @@ include __DIR__ . '/includes/layout/header.php';
     <section class="tab-pane fade" id="practice">
       <?php $problems = fetch_problems((int)$chapter['id']); ?>
       <?php if (!$problems): ?><p class="text-secondary"><?= h(t('no_records')) ?></p><?php endif; ?>
+      <div class="toolbar practice-toolbar">
+        <label><span><?= h(t('search')) ?></span><input id="searchInput" type="search" class="form-control" autocomplete="off"></label>
+        <label><span><?= h(t('difficulty')) ?></span><select id="difficultyFilter" class="form-select"><option value=""><?= h(t('all')) ?></option><option value="level1"><?= h(t('level1')) ?></option><option value="level2"><?= h(t('level2')) ?></option><option value="level3"><?= h(t('level3')) ?></option></select></label>
+        <label><span><?= h(t('type')) ?></span><select id="typeFilter" class="form-select"><option value=""><?= h(t('all')) ?></option><option value="proof"><?= h(t('proof')) ?></option><option value="computation"><?= h(t('computation')) ?></option><option value="counterexample"><?= h(t('counterexample')) ?></option><option value="warmup"><?= h(t('warmup')) ?></option></select></label>
+      </div>
       <?php foreach ($problems as $problem): ?>
         <?php include __DIR__ . '/includes/components/problem-card.php'; ?>
       <?php endforeach; ?>
     </section>
     <section class="tab-pane fade math-content" id="worksheet"><?= $chapter['worksheet_html'] ?></section>
-    <section class="tab-pane fade math-content" id="teacher_notes"><?= $chapter['teacher_notes_html'] ?></section>
+    <section class="tab-pane fade math-content" id="teacher_notes">
+      <?php if (user_can_manage_content()): ?>
+        <?= $chapter['teacher_notes_html'] ?>
+      <?php else: ?>
+        <div class="alert alert-warning"><?= h(t('access_denied')) ?></div>
+      <?php endif; ?>
+    </section>
   </div>
 <?php endif; ?>
 <?php include __DIR__ . '/includes/layout/footer.php'; ?>
-

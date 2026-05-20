@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/includes/functions.php';
+require_content_manager();
 $message = '';
 if (db_available() && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $problemId = (int)$_POST['problem_id'];
