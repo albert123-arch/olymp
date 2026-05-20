@@ -279,18 +279,8 @@ function fetch_chapter(string $courseSlug, string $chapterSlug): ?array
 
 function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
 {
-    $userId = (int)($_SESSION['user_id'] ?? 0);
-    $userTables = db_has_user_problem_tables();
-    $hasBookmarks = $userTables['bookmarks'];
-    $hasProgress = $userTables['progress'];
-    $bookmarkSelect = $hasBookmarks ? 'CASE WHEN bm.user_id IS NULL THEN 0 ELSE 1 END' : '0';
-    $progressSelect = $hasProgress ? 'upp.status' : 'NULL';
-    $bookmarkJoin = $hasBookmarks ? 'LEFT JOIN bookmarks bm ON bm.problem_id = p.id AND bm.user_id = :bookmark_user_id' : '';
-    $progressJoin = $hasProgress ? 'LEFT JOIN user_problem_progress upp ON upp.problem_id = p.id AND upp.user_id = :progress_user_id' : '';
     $sql = 'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
-                   COALESCE(tag_list.tags_csv, "") AS tags_csv,
-                   ' . $bookmarkSelect . ' AS is_bookmarked,
-                   ' . $progressSelect . ' AS progress_status
+                   COALESCE(tag_list.tags_csv, "") AS tags_csv
             FROM problems p
             JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
             LEFT JOIN (
@@ -299,16 +289,8 @@ function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
                 JOIN tags t ON t.id = ptag.tag_id
                 GROUP BY ptag.problem_id
             ) tag_list ON tag_list.problem_id = p.id
-            ' . $bookmarkJoin . '
-            ' . $progressJoin . '
             WHERE p.is_published = 1';
     $params = ['lang' => current_lang()];
-    if ($hasBookmarks) {
-        $params['bookmark_user_id'] = $userId;
-    }
-    if ($hasProgress) {
-        $params['progress_user_id'] = $userId;
-    }
     if ($chapterId !== null) {
         $sql .= ' AND p.chapter_id = :chapter_id';
         $params['chapter_id'] = $chapterId;
@@ -319,25 +301,15 @@ function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
     $sql .= ' ORDER BY p.sort_order, p.id';
     $stmt = db()->prepare($sql);
     $stmt->execute($params);
-    return $stmt->fetchAll();
+    return attach_user_problem_state($stmt->fetchAll());
 }
 
 function fetch_problem(string $code): ?array
 {
-    $userId = (int)($_SESSION['user_id'] ?? 0);
-    $userTables = db_has_user_problem_tables();
-    $hasBookmarks = $userTables['bookmarks'];
-    $hasProgress = $userTables['progress'];
-    $bookmarkSelect = $hasBookmarks ? 'CASE WHEN bm.user_id IS NULL THEN 0 ELSE 1 END' : '0';
-    $progressSelect = $hasProgress ? 'upp.status' : 'NULL';
-    $bookmarkJoin = $hasBookmarks ? 'LEFT JOIN bookmarks bm ON bm.problem_id = p.id AND bm.user_id = :bookmark_user_id' : '';
-    $progressJoin = $hasProgress ? 'LEFT JOIN user_problem_progress upp ON upp.problem_id = p.id AND upp.user_id = :progress_user_id' : '';
     $stmt = db()->prepare(
         'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
                 ch.slug AS chapter_slug, c.slug AS course_slug,
-                COALESCE(tag_list.tags_csv, "") AS tags_csv,
-                ' . $bookmarkSelect . ' AS is_bookmarked,
-                ' . $progressSelect . ' AS progress_status
+                COALESCE(tag_list.tags_csv, "") AS tags_csv
          FROM problems p
          JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
          JOIN chapters ch ON ch.id = p.chapter_id
@@ -348,21 +320,69 @@ function fetch_problem(string $code): ?array
              JOIN tags t ON t.id = ptag.tag_id
              GROUP BY ptag.problem_id
          ) tag_list ON tag_list.problem_id = p.id
-         ' . $bookmarkJoin . '
-         ' . $progressJoin . '
          WHERE p.problem_code = :code AND p.is_published = 1
          LIMIT 1'
     );
-    $params = ['lang' => current_lang(), 'code' => $code];
-    if ($hasBookmarks) {
-        $params['bookmark_user_id'] = $userId;
-    }
-    if ($hasProgress) {
-        $params['progress_user_id'] = $userId;
-    }
-    $stmt->execute($params);
+    $stmt->execute(['lang' => current_lang(), 'code' => $code]);
     $row = $stmt->fetch();
-    return $row ?: null;
+    if (!$row) {
+        return null;
+    }
+
+    $rows = attach_user_problem_state([$row]);
+    return $rows[0] ?? $row;
+}
+
+function attach_user_problem_state(array $problems): array
+{
+    $userId = (int)($_SESSION['user_id'] ?? 0);
+    foreach ($problems as &$problem) {
+        $problem['is_bookmarked'] = 0;
+        $problem['progress_status'] = null;
+    }
+    unset($problem);
+
+    if ($userId <= 0 || !$problems) {
+        return $problems;
+    }
+
+    $ids = array_values(array_unique(array_map(static fn(array $row): int => (int)($row['id'] ?? 0), $problems)));
+    $ids = array_values(array_filter($ids, static fn(int $id): bool => $id > 0));
+    if (!$ids) {
+        return $problems;
+    }
+
+    $userTables = db_has_user_problem_tables();
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+    try {
+        if ($userTables['bookmarks']) {
+            $stmt = db()->prepare("SELECT problem_id FROM bookmarks WHERE user_id = ? AND problem_id IN ($placeholders)");
+            $stmt->execute(array_merge([$userId], $ids));
+            $bookmarks = array_flip(array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN)));
+            foreach ($problems as &$problem) {
+                $problem['is_bookmarked'] = isset($bookmarks[(int)($problem['id'] ?? 0)]) ? 1 : 0;
+            }
+            unset($problem);
+        }
+
+        if ($userTables['progress']) {
+            $stmt = db()->prepare("SELECT problem_id, status FROM user_problem_progress WHERE user_id = ? AND problem_id IN ($placeholders)");
+            $stmt->execute(array_merge([$userId], $ids));
+            $progress = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $progress[(int)$row['problem_id']] = (string)$row['status'];
+            }
+            foreach ($problems as &$problem) {
+                $problem['progress_status'] = $progress[(int)($problem['id'] ?? 0)] ?? null;
+            }
+            unset($problem);
+        }
+    } catch (Throwable $e) {
+        error_log('Failed to attach user problem state: ' . $e->getMessage());
+    }
+
+    return $problems;
 }
 
 function fetch_problem_media(int $problemId, string $role): array
