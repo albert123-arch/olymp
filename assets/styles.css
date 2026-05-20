@@ -1,0 +1,81 @@
+:root {
+  --om-ink: #172033;
+  --om-muted: #647084;
+  --om-line: #e6e9ee;
+  --om-accent: #2257a6;
+  --om-warm: #b96b2c;
+  --om-soft: #f6f8fb;
+}
+
+body {
+  background: var(--om-soft);
+  color: var(--om-ink);
+}
+
+.navbar-brand {
+  letter-spacing: 0;
+}
+
+.course-card,
+.chapter-card,
+.problem-card {
+  border-color: var(--om-line);
+  border-radius: 8px;
+}
+
+.course-card .btn,
+.chapter-card .btn {
+  align-self: flex-start;
+}
+
+.difficulty-badge {
+  background: #eef4ff;
+  color: var(--om-accent);
+  border: 1px solid #cfe0ff;
+}
+
+.math-content p:last-child,
+.reveal-box p:last-child {
+  margin-bottom: 0;
+}
+
+.reveal-box {
+  border-left: 4px solid var(--om-accent);
+  background: #f8fbff;
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.problem-media {
+  margin: 1rem 0 0;
+}
+
+.nav-tabs .nav-link {
+  color: var(--om-muted);
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--om-ink);
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: var(--om-accent);
+  border-color: var(--om-accent);
+}
+
+.btn-outline-primary {
+  color: var(--om-accent);
+  border-color: var(--om-accent);
+}
+
+.btn-outline-primary:hover {
+  background: var(--om-accent);
+  border-color: var(--om-accent);
+}
+
+textarea.form-control {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: .9rem;
+}
+

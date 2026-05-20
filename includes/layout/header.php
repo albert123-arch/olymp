@@ -1,0 +1,41 @@
+<?php
+declare(strict_types=1);
+$pageTitle = $pageTitle ?? t('site_title');
+?>
+<!doctype html>
+<html lang="<?= h(current_lang()) ?>">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><?= h($pageTitle) ?></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/assets/styles.css" rel="stylesheet">
+  <script>
+    window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] } };
+    localStorage.setItem('olymp_lang', <?= json_encode(current_lang()) ?>);
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="<?= h(app_url('index.php')) ?>"><?= h(t('site_title')) ?></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav" aria-controls="topNav" aria-expanded="false" aria-label="Menu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="topNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="<?= h(app_url('index.php')) ?>"><?= h(t('home')) ?></a></li>
+        <li class="nav-item"><a class="nav-link" href="<?= h(app_url('practice.php')) ?>"><?= h(t('practice')) ?></a></li>
+        <li class="nav-item"><a class="nav-link" href="<?= h(app_url('admin/index.php')) ?>"><?= h(t('admin')) ?></a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-secondary small"><?= h(t('language')) ?></span>
+        <a class="btn btn-sm <?= current_lang() === 'en' ? 'btn-dark' : 'btn-outline-dark' ?>" href="?<?= h(http_build_query(array_merge($_GET, ['lang' => 'en']))) ?>">EN</a>
+        <a class="btn btn-sm <?= current_lang() === 'ru' ? 'btn-dark' : 'btn-outline-dark' ?>" href="?<?= h(http_build_query(array_merge($_GET, ['lang' => 'ru']))) ?>">RU</a>
+      </div>
+    </div>
+  </div>
+</nav>
+<main class="container py-4">
+
