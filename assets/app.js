@@ -138,13 +138,22 @@
     setActiveTab(trigger);
   }
 
+  function findTabTrigger(hash) {
+    if (!hash || !hash.startsWith('#')) return null;
+    return Array.from(document.querySelectorAll('.nav-tabs [data-bs-toggle="tab"]')).find((trigger) => {
+      const href = trigger.getAttribute('href');
+      const target = trigger.getAttribute('data-bs-target');
+      return href === hash || target === hash;
+    }) || null;
+  }
+
   document.querySelectorAll('.nav-tabs [data-bs-toggle="tab"]').forEach((trigger) => {
     trigger.addEventListener('click', (event) => {
       event.preventDefault();
       showTab(trigger);
       const href = trigger.getAttribute('href');
       if (href && href.startsWith('#')) {
-        history.replaceState(null, '', href);
+        history.replaceState(null, '', window.location.pathname + window.location.search + href);
       }
     });
   });
@@ -152,7 +161,7 @@
   function activateTabFromHash() {
     const hash = window.location.hash;
     if (!hash) return;
-    const trigger = document.querySelector(`.nav-tabs [data-bs-toggle="tab"][href="${hash}"], .nav-tabs [data-bs-toggle="tab"][data-bs-target="${hash}"]`);
+    const trigger = findTabTrigger(hash);
     if (!trigger) return;
     showTab(trigger);
   }
