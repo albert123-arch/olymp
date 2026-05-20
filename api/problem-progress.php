@@ -20,7 +20,8 @@ $user = current_user();
 if (!$user) {
     json_response(['ok' => false, 'error' => 'auth_required'], 401);
 }
-if (!db_table_exists('user_problem_progress')) {
+$userTables = db_has_user_problem_tables();
+if (!$userTables['progress']) {
     json_response(['ok' => false, 'error' => 'progress_table_missing'], 500);
 }
 
