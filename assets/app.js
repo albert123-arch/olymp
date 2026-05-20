@@ -85,17 +85,6 @@
     });
   });
 
-  document.querySelectorAll('.js-reveal-toggle').forEach((button) => {
-    button.addEventListener('click', () => {
-      const target = document.getElementById(button.dataset.revealTarget || '');
-      if (!target) return;
-      target.open = !target.open;
-      if (target.open) {
-        target.scrollIntoView({block: 'nearest'});
-      }
-    });
-  });
-
   const searchInput = document.getElementById('searchInput');
   const difficultyFilter = document.getElementById('difficultyFilter');
   const typeFilter = document.getElementById('typeFilter');
