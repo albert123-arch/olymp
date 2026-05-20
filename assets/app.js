@@ -77,10 +77,21 @@
     });
   });
 
-  document.querySelectorAll('.collapse').forEach((panel) => {
-    panel.addEventListener('shown.bs.collapse', () => {
-      if (window.MathJax?.typesetPromise) {
+  document.querySelectorAll('.js-reveal').forEach((panel) => {
+    panel.addEventListener('toggle', () => {
+      if (panel.open && window.MathJax?.typesetPromise) {
         window.MathJax.typesetPromise([panel]).catch(() => {});
+      }
+    });
+  });
+
+  document.querySelectorAll('.js-reveal-toggle').forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = document.getElementById(button.dataset.revealTarget || '');
+      if (!target) return;
+      target.open = !target.open;
+      if (target.open) {
+        target.scrollIntoView({block: 'nearest'});
       }
     });
   });

@@ -50,26 +50,30 @@ $isSolved = (string)($problem['progress_status'] ?? '') === 'solved';
     <?php $mediaItems = fetch_problem_media((int)($problem['id'] ?? 0), 'statement'); include __DIR__ . '/media-renderer.php'; ?>
     <div class="actions">
       <?php if (!empty($problem['hint_html'])): ?>
-        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#hint-<?= h($cardId) ?>" type="button" aria-expanded="false"><?= h(t('hint')) ?></button>
+        <button class="btn btn-sm btn-outline-primary js-reveal-toggle" type="button" data-reveal-target="hint-<?= h($cardId) ?>"><?= h(t('hint')) ?></button>
       <?php endif; ?>
       <?php if (!empty($problem['solution_html'])): ?>
-        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#solution-<?= h($cardId) ?>" type="button" aria-expanded="false"><?= h(t('solution')) ?></button>
+        <button class="btn btn-sm btn-outline-primary js-reveal-toggle" type="button" data-reveal-target="solution-<?= h($cardId) ?>"><?= h(t('solution')) ?></button>
       <?php endif; ?>
       <a class="btn btn-sm btn-outline-dark" href="<?= h(problem_url((string)($problem['problem_code'] ?? ''))) ?>"><?= h(t('open_problem')) ?></a>
     </div>
     <?php if (!empty($problem['hint_html'])): ?>
-      <div class="collapse reveal-box reveal-hint mt-3" id="hint-<?= h($cardId) ?>">
-        <h3 class="h6"><?= h(t('hint')) ?></h3>
-        <?= $problem['hint_html'] ?>
-        <?php $mediaItems = fetch_problem_media((int)($problem['id'] ?? 0), 'hint'); include __DIR__ . '/media-renderer.php'; ?>
-      </div>
+      <details class="reveal-box reveal-hint mt-3 js-reveal" id="hint-<?= h($cardId) ?>">
+        <summary><?= h(t('hint')) ?></summary>
+        <div class="reveal-content math-content">
+          <?= $problem['hint_html'] ?>
+          <?php $mediaItems = fetch_problem_media((int)($problem['id'] ?? 0), 'hint'); include __DIR__ . '/media-renderer.php'; ?>
+        </div>
+      </details>
     <?php endif; ?>
     <?php if (!empty($problem['solution_html'])): ?>
-      <div class="collapse reveal-box reveal-solution mt-3" id="solution-<?= h($cardId) ?>">
-        <h3 class="h6"><?= h(t('solution')) ?></h3>
-        <?= $problem['solution_html'] ?>
-        <?php $mediaItems = fetch_problem_media((int)($problem['id'] ?? 0), 'solution'); include __DIR__ . '/media-renderer.php'; ?>
-      </div>
+      <details class="reveal-box reveal-solution mt-3 js-reveal" id="solution-<?= h($cardId) ?>">
+        <summary><?= h(t('solution')) ?></summary>
+        <div class="reveal-content math-content">
+          <?= $problem['solution_html'] ?>
+          <?php $mediaItems = fetch_problem_media((int)($problem['id'] ?? 0), 'solution'); include __DIR__ . '/media-renderer.php'; ?>
+        </div>
+      </details>
     <?php endif; ?>
   </div>
 </article>
