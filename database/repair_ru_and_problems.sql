@@ -111,6 +111,6 @@ SELECT p.id, t.id
 FROM seed_problem_rows s
 JOIN problems p ON p.problem_code = s.id
 JOIN JSON_TABLE(s.tags, '$[*]' COLUMNS (tag VARCHAR(120) PATH '$')) AS jt
-JOIN tags t ON t.slug = jt.tag;
+JOIN tags t ON t.slug COLLATE utf8mb4_unicode_ci = jt.tag COLLATE utf8mb4_unicode_ci;
 
 DROP TEMPORARY TABLE IF EXISTS seed_problem_rows;
