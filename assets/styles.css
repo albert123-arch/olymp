@@ -46,6 +46,10 @@ body {
   border-radius: 6px;
 }
 
+.collapsing {
+  transition-duration: .12s;
+}
+
 .reveal-hint {
   background: #fff8e7;
   border-color: #f2dfaa;
@@ -166,11 +170,6 @@ body {
   place-items: center;
   padding: 0;
   width: 2rem;
-}
-
-.problem-icon-btn:disabled {
-  cursor: wait;
-  opacity: .55;
 }
 
 .problem-icon-btn:focus-visible {

@@ -11,6 +11,7 @@
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       credentials: 'same-origin',
+      keepalive: true,
       body: JSON.stringify(payload),
     });
     return response.json();
@@ -41,43 +42,38 @@
     const solvedKey = key('solved', code);
     let isBookmarked = bookmark?.dataset.apiUrl ? card.dataset.bookmarked === '1' : localStorage.getItem(bookmarkKey) === '1';
     let isSolved = solved?.dataset.apiUrl ? card.dataset.solved === '1' : localStorage.getItem(solvedKey) === '1';
+    let bookmarkSaveTimer = null;
+    let solvedSaveTimer = null;
     syncButton(bookmark, isBookmarked);
     syncButton(solved, isSolved);
 
-    bookmark?.addEventListener('click', async () => {
-      const next = !isBookmarked;
+    function saveLater(timer, callback) {
+      if (timer) window.clearTimeout(timer);
+      return window.setTimeout(callback, 80);
+    }
+
+    bookmark?.addEventListener('click', () => {
+      isBookmarked = !isBookmarked;
+      syncButton(bookmark, isBookmarked);
       if (bookmark.dataset.apiUrl && problemId > 0) {
-        bookmark.disabled = true;
-        try {
-          const data = await postState(bookmark.dataset.apiUrl, {problem_id: problemId, bookmarked: next});
-          if (data.ok) isBookmarked = !!data.bookmarked;
-        } catch (e) {
-        } finally {
-          bookmark.disabled = false;
-        }
+        bookmarkSaveTimer = saveLater(bookmarkSaveTimer, () => {
+          postState(bookmark.dataset.apiUrl, {problem_id: problemId, bookmarked: isBookmarked}).catch(() => {});
+        });
       } else {
-        isBookmarked = next;
         localStorage.setItem(bookmarkKey, isBookmarked ? '1' : '0');
       }
-      syncButton(bookmark, isBookmarked);
     });
 
-    solved?.addEventListener('click', async () => {
-      const next = !isSolved;
+    solved?.addEventListener('click', () => {
+      isSolved = !isSolved;
+      syncButton(solved, isSolved);
       if (solved.dataset.apiUrl && problemId > 0) {
-        solved.disabled = true;
-        try {
-          const data = await postState(solved.dataset.apiUrl, {problem_id: problemId, solved: next});
-          if (data.ok) isSolved = data.status === 'solved';
-        } catch (e) {
-        } finally {
-          solved.disabled = false;
-        }
+        solvedSaveTimer = saveLater(solvedSaveTimer, () => {
+          postState(solved.dataset.apiUrl, {problem_id: problemId, solved: isSolved}).catch(() => {});
+        });
       } else {
-        isSolved = next;
         localStorage.setItem(solvedKey, isSolved ? '1' : '0');
       }
-      syncButton(solved, isSolved);
     });
   });
 
