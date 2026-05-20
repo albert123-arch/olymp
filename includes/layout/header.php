@@ -48,9 +48,10 @@ $user = current_user();
           if ($baseUrl !== '' && str_starts_with($scriptName, $baseUrl . '/')) {
               $currentPath = ltrim(substr($scriptName, strlen($baseUrl)), '/');
           }
+          $currentLang = current_lang() === 'ru' ? 'RU' : 'EN';
+          $toggleLang = current_lang() === 'ru' ? 'en' : 'ru';
         ?>
-        <a class="btn btn-sm <?= current_lang() === 'en' ? 'btn-dark' : 'btn-outline-dark' ?>" href="<?= h(url($currentPath, array_merge($_GET, ['lang' => 'en']))) ?>">EN</a>
-        <a class="btn btn-sm <?= current_lang() === 'ru' ? 'btn-dark' : 'btn-outline-dark' ?>" href="<?= h(url($currentPath, array_merge($_GET, ['lang' => 'ru']))) ?>">RU</a>
+        <a class="btn btn-sm btn-outline-dark" href="<?= h(url($currentPath, array_merge($_GET, ['lang' => $toggleLang]))) ?>"><?= h($currentLang) ?></a>
       </div>
     </div>
   </div>
