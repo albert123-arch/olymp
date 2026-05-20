@@ -86,6 +86,16 @@ function db_has_user_problem_tables(): array
     ];
 }
 
+function db_has_problem_tag_tables(): bool
+{
+    return db_table_exists('tags')
+        && db_column_exists('tags', 'id')
+        && db_column_exists('tags', 'slug')
+        && db_table_exists('problem_tags')
+        && db_column_exists('problem_tags', 'problem_id')
+        && db_column_exists('problem_tags', 'tag_id');
+}
+
 function require_content_manager(): void
 {
     if (!user_can_manage_content()) {
@@ -279,16 +289,19 @@ function fetch_chapter(string $courseSlug, string $chapterSlug): ?array
 
 function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
 {
-    $sql = 'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
-                   COALESCE(tag_list.tags_csv, "") AS tags_csv
-            FROM problems p
-            JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
-            LEFT JOIN (
+    $hasTags = db_has_problem_tag_tables();
+    $tagSelect = $hasTags ? 'COALESCE(tag_list.tags_csv, "")' : '""';
+    $tagJoin = $hasTags ? 'LEFT JOIN (
                 SELECT ptag.problem_id, GROUP_CONCAT(t.slug ORDER BY t.slug SEPARATOR ",") AS tags_csv
                 FROM problem_tags ptag
                 JOIN tags t ON t.id = ptag.tag_id
                 GROUP BY ptag.problem_id
-            ) tag_list ON tag_list.problem_id = p.id
+            ) tag_list ON tag_list.problem_id = p.id' : '';
+    $sql = 'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
+                   ' . $tagSelect . ' AS tags_csv
+            FROM problems p
+            JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
+            ' . $tagJoin . '
             WHERE p.is_published = 1';
     $params = ['lang' => current_lang()];
     if ($chapterId !== null) {
@@ -306,20 +319,23 @@ function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
 
 function fetch_problem(string $code): ?array
 {
-    $stmt = db()->prepare(
-        'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
-                ch.slug AS chapter_slug, c.slug AS course_slug,
-                COALESCE(tag_list.tags_csv, "") AS tags_csv
-         FROM problems p
-         JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
-         JOIN chapters ch ON ch.id = p.chapter_id
-         JOIN courses c ON c.id = ch.course_id
-         LEFT JOIN (
+    $hasTags = db_has_problem_tag_tables();
+    $tagSelect = $hasTags ? 'COALESCE(tag_list.tags_csv, "")' : '""';
+    $tagJoin = $hasTags ? 'LEFT JOIN (
              SELECT ptag.problem_id, GROUP_CONCAT(t.slug ORDER BY t.slug SEPARATOR ",") AS tags_csv
              FROM problem_tags ptag
              JOIN tags t ON t.id = ptag.tag_id
              GROUP BY ptag.problem_id
-         ) tag_list ON tag_list.problem_id = p.id
+         ) tag_list ON tag_list.problem_id = p.id' : '';
+    $stmt = db()->prepare(
+        'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
+                ch.slug AS chapter_slug, c.slug AS course_slug,
+                ' . $tagSelect . ' AS tags_csv
+         FROM problems p
+         JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
+         JOIN chapters ch ON ch.id = p.chapter_id
+         JOIN courses c ON c.id = ch.course_id
+         ' . $tagJoin . '
          WHERE p.problem_code = :code AND p.is_published = 1
          LIMIT 1'
     );
