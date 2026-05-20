@@ -137,7 +137,11 @@
       // fallback below
     }
 
-    activateManually();
+    if (typeof trigger.click === 'function') {
+      trigger.click();
+    } else {
+      activateManually();
+    }
   }
 
   window.addEventListener('hashchange', activateTabFromHash);
