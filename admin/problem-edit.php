@@ -2,13 +2,25 @@
 require_once __DIR__ . '/_bootstrap.php';
 $id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
 $error = '';
+$hasProblemType = column_exists('problems', 'problem_type');
+$difficultyIsEnum = str_starts_with((string) column_type('problems', 'difficulty'), 'enum');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     try {
+        $difficulty = (int) ($_POST['difficulty'] ?? 1);
+        $difficultyValue = $difficultyIsEnum ? ([1 => 'intro', 2 => 'core', 3 => 'challenge'][$difficulty] ?? 'core') : $difficulty;
         if ($id) {
-            execute_query('UPDATE problems SET chapter_id=?, problem_code=?, book_number=?, difficulty=?, problem_type=?, sort_order=?, is_published=?, updated_at=NOW() WHERE id=?', [(int) $_POST['chapter_id'], (string) $_POST['problem_code'], (int) $_POST['book_number'], (int) $_POST['difficulty'], (string) $_POST['problem_type'], (int) $_POST['sort_order'], isset($_POST['is_published']) ? 1 : 0, $id]);
+            if ($hasProblemType) {
+                execute_query('UPDATE problems SET chapter_id=?, problem_code=?, book_number=?, difficulty=?, problem_type=?, sort_order=?, is_published=?, updated_at=NOW() WHERE id=?', [(int) $_POST['chapter_id'], (string) $_POST['problem_code'], (int) $_POST['book_number'], $difficultyValue, (string) $_POST['problem_type'], (int) $_POST['sort_order'], isset($_POST['is_published']) ? 1 : 0, $id]);
+            } else {
+                execute_query('UPDATE problems SET chapter_id=?, problem_code=?, book_number=?, difficulty=?, sort_order=?, is_published=?, updated_at=NOW() WHERE id=?', [(int) $_POST['chapter_id'], (string) $_POST['problem_code'], (int) $_POST['book_number'], $difficultyValue, (int) $_POST['sort_order'], isset($_POST['is_published']) ? 1 : 0, $id]);
+            }
         } else {
-            execute_query('INSERT INTO problems (chapter_id, problem_code, book_number, difficulty, problem_type, sort_order, is_published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())', [(int) $_POST['chapter_id'], (string) $_POST['problem_code'], (int) $_POST['book_number'], (int) $_POST['difficulty'], (string) $_POST['problem_type'], (int) $_POST['sort_order'], isset($_POST['is_published']) ? 1 : 0]);
+            if ($hasProblemType) {
+                execute_query('INSERT INTO problems (chapter_id, problem_code, book_number, difficulty, problem_type, sort_order, is_published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())', [(int) $_POST['chapter_id'], (string) $_POST['problem_code'], (int) $_POST['book_number'], $difficultyValue, (string) $_POST['problem_type'], (int) $_POST['sort_order'], isset($_POST['is_published']) ? 1 : 0]);
+            } else {
+                execute_query('INSERT INTO problems (chapter_id, problem_code, book_number, difficulty, sort_order, is_published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())', [(int) $_POST['chapter_id'], (string) $_POST['problem_code'], (int) $_POST['book_number'], $difficultyValue, (int) $_POST['sort_order'], isset($_POST['is_published']) ? 1 : 0]);
+            }
             $id = (int) db()->lastInsertId();
         }
         foreach (admin_languages() as $lang) {
@@ -23,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 $problem = $id ? fetch_one('SELECT * FROM problems WHERE id=?', [$id]) : ['chapter_id'=>'', 'problem_code'=>'', 'book_number'=>0, 'difficulty'=>1, 'problem_type'=>'computation', 'sort_order'=>0, 'is_published'=>1];
+$currentDifficulty = is_string($problem['difficulty'] ?? null) ? (['intro' => 1, 'core' => 2, 'challenge' => 3][$problem['difficulty']] ?? 1) : (int) ($problem['difficulty'] ?? 1);
 $chapters = fetch_all('SELECT ch.id, ch.slug, c.slug course_slug FROM chapters ch JOIN courses c ON c.id=ch.course_id ORDER BY c.sort_order, ch.sort_order');
 $byLang = $id ? array_column(fetch_all('SELECT * FROM problem_texts WHERE problem_id=?', [$id]), null, 'lang') : [];
 $types = ['computation','proof','counterexample','construction','challenge','mixed'];
@@ -35,8 +48,8 @@ admin_header(t('edit'));
 <div class="col-md-4"><select class="form-select" name="chapter_id"><?php foreach ($chapters as $ch): ?><option value="<?= e((string) $ch['id']) ?>" <?= (int)$problem['chapter_id']===(int)$ch['id']?'selected':'' ?>><?= e($ch['course_slug'].'/'.$ch['slug']) ?></option><?php endforeach; ?></select></div>
 <div class="col-md-2"><input class="form-control" name="problem_code" value="<?= e($problem['problem_code']) ?>" placeholder="NT-01-001"></div>
 <div class="col-md-2"><input class="form-control" type="number" name="book_number" value="<?= e((string)$problem['book_number']) ?>"></div>
-<div class="col-md-2"><select class="form-select" name="difficulty"><?php for($i=1;$i<=3;$i++): ?><option value="<?= $i ?>" <?= (int)$problem['difficulty']===$i?'selected':'' ?>><?= $i ?></option><?php endfor; ?></select></div>
-<div class="col-md-2"><select class="form-select" name="problem_type" aria-label="<?= e(t('problem_type')) ?>"><?php foreach($types as $type): ?><option value="<?= e($type) ?>" <?= $problem['problem_type']===$type?'selected':'' ?>><?= e(t($type)) ?></option><?php endforeach; ?></select></div>
+<div class="col-md-2"><select class="form-select" name="difficulty"><?php for($i=1;$i<=3;$i++): ?><option value="<?= $i ?>" <?= $currentDifficulty===$i?'selected':'' ?>><?= $i ?></option><?php endfor; ?></select></div>
+<?php if ($hasProblemType): ?><div class="col-md-2"><select class="form-select" name="problem_type" aria-label="<?= e(t('problem_type')) ?>"><?php foreach($types as $type): ?><option value="<?= e($type) ?>" <?= ($problem['problem_type'] ?? '')===$type?'selected':'' ?>><?= e(t($type)) ?></option><?php endforeach; ?></select></div><?php endif; ?>
 <div class="col-md-2"><input class="form-control" type="number" name="sort_order" value="<?= e((string)$problem['sort_order']) ?>"></div>
 <div class="col-md-2 form-check pt-2"><input class="form-check-input" name="is_published" type="checkbox" <?= $problem['is_published']?'checked':'' ?>> <label class="form-check-label"><?= e(t('publish')) ?></label></div>
 </div>

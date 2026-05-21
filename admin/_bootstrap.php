@@ -57,9 +57,31 @@ function upload_problem_image(int $problemId, string $problemCode): void
         throw new RuntimeException('Cannot move upload');
     }
     $relative = 'uploads/problems/' . basename($dir) . '/' . $name;
+    $columns = ['problem_id', 'role', 'file_path', 'mime_type', 'sort_order', 'created_at'];
+    $values = [$problemId, $_POST['image_role'] ?? 'statement', $relative, $mime, 0];
+    $placeholders = ['?', '?', '?', '?', '?', 'NOW()'];
+    if (column_exists('problem_media', 'lang')) {
+        $columns[] = 'lang';
+        $values[] = ($_POST['image_lang'] ?? '') ?: null;
+        $placeholders[] = '?';
+    }
+    if (column_exists('problem_media', 'original_name')) {
+        $columns[] = 'original_name';
+        $values[] = $file['name'];
+        $placeholders[] = '?';
+    }
+    if (column_exists('problem_media', 'file_size')) {
+        $columns[] = 'file_size';
+        $values[] = $file['size'];
+        $placeholders[] = '?';
+    }
+    if (column_exists('problem_media', 'is_published')) {
+        $columns[] = 'is_published';
+        $values[] = 1;
+        $placeholders[] = '?';
+    }
     execute_query(
-        'INSERT INTO problem_media (problem_id, role, lang, file_path, original_name, mime_type, file_size, sort_order, is_published, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1, NOW())',
-        [$problemId, $_POST['image_role'] ?? 'statement', ($_POST['image_lang'] ?? '') ?: null, $relative, $file['name'], $mime, $file['size']]
+        'INSERT INTO problem_media (`' . implode('`,`', $columns) . '`) VALUES (' . implode(',', $placeholders) . ')',
+        $values
     );
 }

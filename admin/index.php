@@ -1,12 +1,22 @@
 <?php
 require_once __DIR__ . '/_bootstrap.php';
+$missingTranslations = 0;
+foreach (get_available_languages() as $language) {
+    $missingTranslations += (int) (fetch_one(
+        "SELECT COUNT(*) c
+         FROM problems p
+         LEFT JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = ?
+         WHERE pt.problem_id IS NULL OR pt.title = '' OR pt.statement_html = ''",
+        [$language['code']]
+    )['c'] ?? 0);
+}
 $counts = [
     'total_courses' => fetch_one('SELECT COUNT(*) c FROM courses')['c'] ?? 0,
     'total_chapters' => fetch_one('SELECT COUNT(*) c FROM chapters')['c'] ?? 0,
     'total_problems' => fetch_one('SELECT COUNT(*) c FROM problems')['c'] ?? 0,
     'published_problems' => fetch_one('SELECT COUNT(*) c FROM problems WHERE is_published = 1')['c'] ?? 0,
     'draft_problems' => fetch_one('SELECT COUNT(*) c FROM problems WHERE is_published = 0')['c'] ?? 0,
-    'missing_translations' => fetch_one("SELECT COUNT(*) c FROM problems p JOIN languages l ON l.is_active = 1 LEFT JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = l.code WHERE pt.id IS NULL OR pt.title = '' OR pt.statement_html = ''")['c'] ?? 0,
+    'missing_translations' => $missingTranslations,
 ];
 admin_header(t('dashboard'));
 ?>

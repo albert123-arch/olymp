@@ -80,3 +80,54 @@ function execute_query(string $sql, array $params = []): bool
     $stmt = db()->prepare($sql);
     return $stmt->execute($params);
 }
+
+function table_exists(string $table): bool
+{
+    static $cache = [];
+    if (isset($cache[$table])) {
+        return $cache[$table];
+    }
+    try {
+        $stmt = db()->prepare('SHOW TABLES LIKE ?');
+        $stmt->execute([$table]);
+        $cache[$table] = (bool) $stmt->fetchColumn();
+    } catch (Throwable $e) {
+        $cache[$table] = false;
+    }
+    return $cache[$table];
+}
+
+function column_exists(string $table, string $column): bool
+{
+    static $cache = [];
+    $key = $table . '.' . $column;
+    if (isset($cache[$key])) {
+        return $cache[$key];
+    }
+    try {
+        $stmt = db()->prepare("SHOW COLUMNS FROM `{$table}` LIKE ?");
+        $stmt->execute([$column]);
+        $cache[$key] = (bool) $stmt->fetch();
+    } catch (Throwable $e) {
+        $cache[$key] = false;
+    }
+    return $cache[$key];
+}
+
+function column_type(string $table, string $column): ?string
+{
+    static $cache = [];
+    $key = $table . '.' . $column;
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+    try {
+        $stmt = db()->prepare("SHOW COLUMNS FROM `{$table}` LIKE ?");
+        $stmt->execute([$column]);
+        $row = $stmt->fetch();
+        $cache[$key] = $row['Type'] ?? null;
+    } catch (Throwable $e) {
+        $cache[$key] = null;
+    }
+    return $cache[$key];
+}

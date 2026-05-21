@@ -18,12 +18,25 @@ if (!is_array($items)) {
 }
 
 foreach ($items as $item) {
-    execute_query(
-        'INSERT INTO problems (chapter_id, problem_code, book_number, difficulty, problem_type, sort_order, is_published, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-         ON DUPLICATE KEY UPDATE chapter_id=VALUES(chapter_id), book_number=VALUES(book_number), difficulty=VALUES(difficulty), problem_type=VALUES(problem_type), sort_order=VALUES(sort_order), is_published=VALUES(is_published), updated_at=NOW()',
-        [$item['chapter_id'], $item['problem_code'], $item['book_number'] ?? null, $item['difficulty'] ?? 1, $item['problem_type'] ?? 'mixed', $item['sort_order'] ?? 0, !empty($item['is_published']) ? 1 : 0]
-    );
+    $difficulty = $item['difficulty'] ?? 1;
+    if (str_starts_with((string) column_type('problems', 'difficulty'), 'enum') && is_numeric($difficulty)) {
+        $difficulty = [1 => 'intro', 2 => 'core', 3 => 'challenge'][(int) $difficulty] ?? 'core';
+    }
+    if (column_exists('problems', 'problem_type')) {
+        execute_query(
+            'INSERT INTO problems (chapter_id, problem_code, book_number, difficulty, problem_type, sort_order, is_published, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+             ON DUPLICATE KEY UPDATE chapter_id=VALUES(chapter_id), book_number=VALUES(book_number), difficulty=VALUES(difficulty), problem_type=VALUES(problem_type), sort_order=VALUES(sort_order), is_published=VALUES(is_published), updated_at=NOW()',
+            [$item['chapter_id'], $item['problem_code'], $item['book_number'] ?? null, $difficulty, $item['problem_type'] ?? 'mixed', $item['sort_order'] ?? 0, !empty($item['is_published']) ? 1 : 0]
+        );
+    } else {
+        execute_query(
+            'INSERT INTO problems (chapter_id, problem_code, book_number, difficulty, sort_order, is_published, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+             ON DUPLICATE KEY UPDATE chapter_id=VALUES(chapter_id), book_number=VALUES(book_number), difficulty=VALUES(difficulty), sort_order=VALUES(sort_order), is_published=VALUES(is_published), updated_at=NOW()',
+            [$item['chapter_id'], $item['problem_code'], $item['book_number'] ?? null, $difficulty, $item['sort_order'] ?? 0, !empty($item['is_published']) ? 1 : 0]
+        );
+    }
     $problem = fetch_one('SELECT id FROM problems WHERE problem_code = ?', [$item['problem_code']]);
     foreach (($item['texts'] ?? []) as $lang => $text) {
         execute_query(
@@ -36,4 +49,3 @@ foreach ($items as $item) {
 }
 
 echo "Imported " . count($items) . " problems\n";
-

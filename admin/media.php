@@ -9,10 +9,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             execute_query('DELETE FROM problem_media WHERE id=?', [(int) $_POST['id']]);
         }
     } else {
-        execute_query('UPDATE problem_media SET role=?, lang=?, sort_order=?, is_published=? WHERE id=?', [(string) $_POST['role'], ($_POST['lang'] ?? '') ?: null, (int) $_POST['sort_order'], isset($_POST['is_published']) ? 1 : 0, (int) $_POST['id']]);
+        $sets = ['role=?', 'sort_order=?'];
+        $params = [(string) $_POST['role'], (int) $_POST['sort_order']];
+        if (column_exists('problem_media', 'lang')) {
+            $sets[] = 'lang=?';
+            $params[] = ($_POST['lang'] ?? '') ?: null;
+        }
+        if (column_exists('problem_media', 'is_published')) {
+            $sets[] = 'is_published=?';
+            $params[] = isset($_POST['is_published']) ? 1 : 0;
+        }
+        $params[] = (int) $_POST['id'];
+        execute_query('UPDATE problem_media SET ' . implode(',', $sets) . ' WHERE id=?', $params);
     }
 }
-$items = fetch_all('SELECT pm.*, p.problem_code FROM problem_media pm JOIN problems p ON p.id=pm.problem_id ORDER BY pm.created_at DESC');
+$originalNameExpr = column_exists('problem_media', 'original_name') ? 'pm.original_name' : "''";
+$langExpr = column_exists('problem_media', 'lang') ? 'pm.lang' : 'NULL';
+$publishedExpr = column_exists('problem_media', 'is_published') ? 'pm.is_published' : '1';
+$items = fetch_all("SELECT pm.*, {$originalNameExpr} AS original_name, {$langExpr} AS lang, {$publishedExpr} AS is_published, p.problem_code FROM problem_media pm JOIN problems p ON p.id=pm.problem_id ORDER BY pm.created_at DESC");
 admin_header(t('media'));
 ?>
 <h1 class="h3"><?= e(t('media')) ?></h1>

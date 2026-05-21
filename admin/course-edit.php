@@ -6,7 +6,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     execute_query('UPDATE courses SET slug = ?, sort_order = ?, is_published = ?, updated_at = NOW() WHERE id = ?', [(string) $_POST['slug'], (int) $_POST['sort_order'], isset($_POST['is_published']) ? 1 : 0, $id]);
     foreach (admin_languages() as $lang) {
         $code = $lang['code'];
-        execute_query('INSERT INTO course_texts (course_id, lang, title, description_html) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE title = VALUES(title), description_html = VALUES(description_html)', [$id, $code, $_POST["title_$code"] ?? '', $_POST["description_$code"] ?? '']);
+        $description = $_POST["description_$code"] ?? '';
+        if (column_exists('course_texts', 'description_html')) {
+            execute_query('INSERT INTO course_texts (course_id, lang, title, description_html) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE title = VALUES(title), description_html = VALUES(description_html)', [$id, $code, $_POST["title_$code"] ?? '', $description]);
+        } elseif (column_exists('course_texts', 'overview_html')) {
+            execute_query('INSERT INTO course_texts (course_id, lang, title, summary_html, overview_html) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE title = VALUES(title), summary_html = VALUES(summary_html), overview_html = VALUES(overview_html)', [$id, $code, $_POST["title_$code"] ?? '', strip_tags($description), $description]);
+        } else {
+            execute_query('INSERT INTO course_texts (course_id, lang, title, summary_html) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE title = VALUES(title), summary_html = VALUES(summary_html)', [$id, $code, $_POST["title_$code"] ?? '', $description]);
+        }
     }
     header('Location: ' . url('admin/courses.php'));
     exit;
@@ -22,7 +29,7 @@ admin_header(t('edit'));
 <?php foreach (admin_languages() as $lang): $code = $lang['code']; $txt = $byLang[$code] ?? []; ?>
 <h2 class="h5"><?= e(strtoupper($code)) ?></h2>
 <label class="form-label w-100"><?= e(t('title')) ?><input class="form-control" name="title_<?= e($code) ?>" value="<?= e($txt['title'] ?? '') ?>"></label>
-<label class="form-label w-100"><?= e(t('description')) ?><?= admin_textarea("description_$code", $txt['description_html'] ?? '', 4) ?></label>
+<label class="form-label w-100"><?= e(t('description')) ?><?= admin_textarea("description_$code", $txt['description_html'] ?? $txt['overview_html'] ?? $txt['summary_html'] ?? '', 4) ?></label>
 <?php endforeach; ?>
 <button class="btn btn-accent"><?= e(t('save')) ?></button>
 </form>

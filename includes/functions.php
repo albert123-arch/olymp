@@ -71,9 +71,15 @@ function get_courses(bool $publishedOnly = true): array
         return [];
     }
     $where = $publishedOnly ? 'WHERE c.is_published = 1' : '';
+    $descriptionExpr = column_exists('course_texts', 'description_html')
+        ? 'ct.description_html'
+        : (column_exists('course_texts', 'overview_html')
+            ? 'COALESCE(ct.overview_html, ct.summary_html)'
+            : 'ct.summary_html');
+    $missingExpr = column_exists('course_texts', 'id') ? 'ct.id IS NULL' : 'ct.course_id IS NULL';
     return fetch_all(
-        "SELECT c.*, ct.title, ct.description_html,
-                CASE WHEN ct.id IS NULL THEN 1 ELSE 0 END AS translation_missing
+        "SELECT c.*, ct.title, {$descriptionExpr} AS description_html,
+                CASE WHEN {$missingExpr} THEN 1 ELSE 0 END AS translation_missing
          FROM courses c
          LEFT JOIN course_texts ct ON ct.course_id = c.id AND ct.lang = :lang
          {$where}
@@ -84,9 +90,15 @@ function get_courses(bool $publishedOnly = true): array
 
 function get_course_by_slug(string $slug): ?array
 {
+    $descriptionExpr = column_exists('course_texts', 'description_html')
+        ? 'ct.description_html'
+        : (column_exists('course_texts', 'overview_html')
+            ? 'COALESCE(ct.overview_html, ct.summary_html)'
+            : 'ct.summary_html');
+    $missingExpr = column_exists('course_texts', 'id') ? 'ct.id IS NULL' : 'ct.course_id IS NULL';
     return fetch_one(
-        "SELECT c.*, ct.title, ct.description_html,
-                CASE WHEN ct.id IS NULL THEN 1 ELSE 0 END AS translation_missing
+        "SELECT c.*, ct.title, {$descriptionExpr} AS description_html,
+                CASE WHEN {$missingExpr} THEN 1 ELSE 0 END AS translation_missing
          FROM courses c
          LEFT JOIN course_texts ct ON ct.course_id = c.id AND ct.lang = :lang
          WHERE c.slug = :slug",
@@ -97,9 +109,11 @@ function get_course_by_slug(string $slug): ?array
 function get_chapters_for_course(int $courseId, bool $publishedOnly = true): array
 {
     $where = $publishedOnly ? 'AND ch.is_published = 1' : '';
+    $descriptionExpr = column_exists('chapter_texts', 'description_html') ? 'txt.description_html' : 'txt.summary_html';
+    $missingExpr = column_exists('chapter_texts', 'id') ? 'txt.id IS NULL' : 'txt.chapter_id IS NULL';
     return fetch_all(
-        "SELECT ch.*, txt.title, txt.description_html,
-                CASE WHEN txt.id IS NULL THEN 1 ELSE 0 END AS translation_missing
+        "SELECT ch.*, txt.title, {$descriptionExpr} AS description_html,
+                CASE WHEN {$missingExpr} THEN 1 ELSE 0 END AS translation_missing
          FROM chapters ch
          LEFT JOIN chapter_texts txt ON txt.chapter_id = ch.id AND txt.lang = :lang
          WHERE ch.course_id = :course_id {$where}
@@ -110,9 +124,11 @@ function get_chapters_for_course(int $courseId, bool $publishedOnly = true): arr
 
 function get_chapter_by_slug(int $courseId, string $slug): ?array
 {
+    $descriptionExpr = column_exists('chapter_texts', 'description_html') ? 'txt.description_html' : 'txt.summary_html';
+    $missingExpr = column_exists('chapter_texts', 'id') ? 'txt.id IS NULL' : 'txt.chapter_id IS NULL';
     return fetch_one(
-        "SELECT ch.*, txt.title, txt.description_html, txt.theory_html, txt.examples_html, txt.worksheet_html, txt.teacher_notes_html,
-                CASE WHEN txt.id IS NULL THEN 1 ELSE 0 END AS translation_missing
+        "SELECT ch.*, txt.title, {$descriptionExpr} AS description_html, txt.theory_html, txt.examples_html, txt.worksheet_html, txt.teacher_notes_html,
+                CASE WHEN {$missingExpr} THEN 1 ELSE 0 END AS translation_missing
          FROM chapters ch
          LEFT JOIN chapter_texts txt ON txt.chapter_id = ch.id AND txt.lang = :lang
          WHERE ch.course_id = :course_id AND ch.slug = :slug",
@@ -122,6 +138,16 @@ function get_chapter_by_slug(int $courseId, string $slug): ?array
 
 function get_problem_tags(int $problemId): array
 {
+    if (!table_exists('tag_texts')) {
+        return fetch_all(
+            "SELECT tg.slug, tg.slug AS title
+             FROM problem_tags pt
+             JOIN tags tg ON tg.id = pt.tag_id
+             WHERE pt.problem_id = :problem_id
+             ORDER BY tg.slug",
+            ['problem_id' => $problemId]
+        );
+    }
     return fetch_all(
         "SELECT tg.slug, tt.title
          FROM problem_tags pt
@@ -146,10 +172,11 @@ function get_problems(array $filters = []): array
         $params['course_id'] = (int) $filters['course_id'];
     }
     $whereSql = implode(' AND ', $where);
+    $missingExpr = column_exists('problem_texts', 'id') ? 'pt.id IS NULL' : 'pt.problem_id IS NULL';
     return fetch_all(
         "SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html,
                 ch.slug AS chapter_slug, c.slug AS course_slug,
-                CASE WHEN pt.id IS NULL THEN 1 ELSE 0 END AS translation_missing
+                CASE WHEN {$missingExpr} THEN 1 ELSE 0 END AS translation_missing
          FROM problems p
          JOIN chapters ch ON ch.id = p.chapter_id
          JOIN courses c ON c.id = ch.course_id
@@ -162,10 +189,11 @@ function get_problems(array $filters = []): array
 
 function get_problem_by_code(string $code): ?array
 {
+    $missingExpr = column_exists('problem_texts', 'id') ? 'pt.id IS NULL' : 'pt.problem_id IS NULL';
     return fetch_one(
         "SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
                 ch.slug AS chapter_slug, c.slug AS course_slug, ch.id AS chapter_id,
-                CASE WHEN pt.id IS NULL THEN 1 ELSE 0 END AS translation_missing
+                CASE WHEN {$missingExpr} THEN 1 ELSE 0 END AS translation_missing
          FROM problems p
          JOIN chapters ch ON ch.id = p.chapter_id
          JOIN courses c ON c.id = ch.course_id
@@ -175,9 +203,12 @@ function get_problem_by_code(string $code): ?array
     );
 }
 
-function render_stars(int $difficulty): string
+function render_stars($difficulty): string
 {
-    $difficulty = max(1, min(3, $difficulty));
+    if (is_string($difficulty)) {
+        $difficulty = ['intro' => 1, 'core' => 2, 'challenge' => 3][$difficulty] ?? (int) $difficulty;
+    }
+    $difficulty = max(1, min(3, (int) $difficulty));
     return '<span class="stars" aria-label="' . e(t('level') . ' ' . $difficulty . ' ' . t('out_of_3')) . '">' .
         str_repeat('★', $difficulty) . str_repeat('☆', 3 - $difficulty) .
         '</span>';
@@ -199,6 +230,17 @@ function save_problem_progress(int $userId, int $problemId, string $status): voi
 {
     $allowed = ['not_started', 'viewed', 'solved', 'needs_review'];
     if (!in_array($status, $allowed, true)) {
+        return;
+    }
+    $statusType = (string) column_type('user_problem_progress', 'status');
+    if (str_contains($statusType, "'unseen'")) {
+        $legacyStatus = ['not_started' => 'unseen', 'viewed' => 'started', 'solved' => 'solved', 'needs_review' => 'review'][$status];
+        execute_query(
+            "INSERT INTO user_problem_progress (user_id, problem_id, status, attempts, started_at, solved_at)
+             VALUES (?, ?, ?, 0, NOW(), IF(? = 'solved', NOW(), NULL))
+             ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = NOW(), solved_at = IF(VALUES(status) = 'solved', NOW(), solved_at)",
+            [$userId, $problemId, $legacyStatus, $legacyStatus]
+        );
         return;
     }
     execute_query(
