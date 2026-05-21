@@ -5,3 +5,5 @@ uploads/problems/*
 *.log
 .DS_Store
 Thumbs.db
+
+database/*.sql
