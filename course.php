@@ -1,8 +1,15 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/includes/functions.php';
-$slug = (string)($_GET['course'] ?? 'number-theory');
-$course = db_available() ? fetch_course($slug) : null;
+$slug = (string)($_GET['course'] ?? '');
+if (db_available() && $slug === '') {
+    $firstCourse = fetch_first_course();
+    if ($firstCourse) {
+        header('Location: ' . course_url($firstCourse['slug']));
+        exit;
+    }
+}
+$course = db_available() && $slug !== '' ? fetch_course($slug) : null;
 $courseTabs = ['overview', 'chapters', 'practice', 'worksheets'];
 if (user_can_manage_content()) {
     $courseTabs[] = 'teacher_guide';

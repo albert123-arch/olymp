@@ -284,6 +284,57 @@ function fetch_course(string $slug): ?array
     }
 }
 
+function fetch_first_course(): ?array
+{
+    try {
+        $stmt = db()->prepare(
+            'SELECT c.*, ct.title, ct.summary_html, ct.overview_html, ct.teacher_guide_html
+             FROM courses c
+             JOIN course_texts ct ON ct.course_id = c.id AND ct.lang = :lang
+             WHERE c.is_published = 1
+             ORDER BY c.sort_order, c.id
+             LIMIT 1'
+        );
+        $stmt->execute(['lang' => current_lang()]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    } catch (Throwable) {
+        return null;
+    }
+}
+
+function fetch_first_course_slug(): ?string
+{
+    $course = fetch_first_course();
+    return $course['slug'] ?? null;
+}
+
+function fetch_first_chapter(int $courseId): ?array
+{
+    try {
+        $stmt = db()->prepare(
+            'SELECT ch.*, c.slug AS course_slug,
+                    COALESCE(cht.title, ch.slug) AS title,
+                    COALESCE(cht.summary_html, "") AS summary_html,
+                    COALESCE(cht.theory_html, "") AS theory_html,
+                    COALESCE(cht.examples_html, "") AS examples_html,
+                    COALESCE(cht.worksheet_html, "") AS worksheet_html,
+                    COALESCE(cht.teacher_notes_html, "") AS teacher_notes_html
+             FROM chapters ch
+             JOIN courses c ON c.id = ch.course_id
+             LEFT JOIN chapter_texts cht ON cht.chapter_id = ch.id AND cht.lang = :lang
+             WHERE ch.course_id = :course_id AND ch.is_published = 1
+             ORDER BY ch.sort_order, ch.id
+             LIMIT 1'
+        );
+        $stmt->execute(['lang' => current_lang(), 'course_id' => $courseId]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    } catch (Throwable) {
+        return null;
+    }
+}
+
 function fetch_chapters(int $courseId): array
 {
     try {

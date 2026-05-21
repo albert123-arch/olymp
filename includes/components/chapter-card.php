@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 $chapter = $chapter ?? [];
-$courseSlug = (string)($chapter['course_slug'] ?? ($_GET['course'] ?? 'number-theory'));
+$courseSlug = (string)($chapter['course_slug'] ?? ($_GET['course'] ?? ''));
 $chapterSlug = (string)($chapter['slug'] ?? '');
 ?>
 <article class="card chapter-card h-100 shadow-sm">
