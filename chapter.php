@@ -18,14 +18,14 @@ include __DIR__ . '/includes/layout/header.php';
   <ul class="nav nav-tabs hash-tab-nav" role="tablist">
     <?php foreach (['theory', 'examples', 'practice', 'worksheet', 'teacher_notes'] as $i => $key): ?>
       <li class="nav-item" role="presentation">
-        <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" data-bs-toggle="tab" data-bs-target="#<?= h($key) ?>" href="#<?= h($key) ?>" role="tab" aria-controls="<?= h($key) ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>"><?= h(t($key)) ?></a>
+        <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" href="#<?= h($key) ?>" role="tab" aria-controls="<?= h($key) ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>"><?= h(t($key)) ?></a>
       </li>
     <?php endforeach; ?>
   </ul>
   <div class="tab-content hash-tab-content border border-top-0 p-3 p-lg-4 bg-white">
-    <section class="tab-pane fade show active math-content" id="theory"><?= $chapter['theory_html'] ?></section>
-    <section class="tab-pane fade math-content" id="examples"><?= $chapter['examples_html'] ?></section>
-    <section class="tab-pane fade" id="practice">
+    <section class="tab-pane active math-content" id="theory"><?= $chapter['theory_html'] ?></section>
+    <section class="tab-pane math-content" id="examples"><?= $chapter['examples_html'] ?></section>
+    <section class="tab-pane" id="practice">
       <?php $problems = fetch_problems((int)$chapter['id']); ?>
       <?php if (!$problems): ?><p class="text-secondary"><?= h(t('no_records')) ?></p><?php endif; ?>
       <p><a class="btn btn-outline-primary" href="<?= h(practice_url($courseSlug, $chapterSlug)) ?>"><?= h(t('practice')) ?></a></p>
@@ -38,8 +38,8 @@ include __DIR__ . '/includes/layout/header.php';
         <?php include __DIR__ . '/includes/components/problem-card.php'; ?>
       <?php endforeach; ?>
     </section>
-    <section class="tab-pane fade math-content" id="worksheet"><?= $chapter['worksheet_html'] ?></section>
-    <section class="tab-pane fade math-content" id="teacher_notes">
+    <section class="tab-pane math-content" id="worksheet"><?= $chapter['worksheet_html'] ?></section>
+    <section class="tab-pane math-content" id="teacher_notes">
       <?php if (user_can_manage_content()): ?>
         <?= $chapter['teacher_notes_html'] ?>
       <?php else: ?>
@@ -53,16 +53,16 @@ include __DIR__ . '/includes/layout/header.php';
         var hash = window.location.hash;
         if (!hash) return;
         var pane = document.querySelector(hash + '.tab-pane');
-        var link = document.querySelector('.hash-tab-nav [href="' + hash + '"], .hash-tab-nav [data-bs-target="' + hash + '"]');
+        var link = document.querySelector('.hash-tab-nav [href="' + hash + '"]');
         if (!pane || !link) return;
         document.querySelectorAll('.hash-tab-content > .tab-pane').forEach(function (el) {
-          el.classList.remove('active', 'show');
+          el.classList.remove('active');
         });
         document.querySelectorAll('.hash-tab-nav .nav-link').forEach(function (el) {
           el.classList.remove('active');
           el.setAttribute('aria-selected', 'false');
         });
-        pane.classList.add('active', 'show');
+        pane.classList.add('active');
         link.classList.add('active');
         link.setAttribute('aria-selected', 'true');
       }
