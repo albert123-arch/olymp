@@ -495,7 +495,23 @@ function coming_soon_block(): string
     return '<div class="text-secondary py-2">' . h(t('coming_soon_status')) . '</div>';
 }
 
+function html_has_visible_content(?string $html): bool
+{
+    $html = trim((string)$html);
+    if ($html === '') {
+        return false;
+    }
+
+    if (preg_match('/<(img|video|iframe|audio|table|svg|math)\b/i', $html)) {
+        return true;
+    }
+
+    $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $text = preg_replace('/[\s\x{00A0}\x{200B}\x{FEFF}]+/u', '', (string)$text);
+    return $text !== '';
+}
+
 function html_or_soon(?string $html): string
 {
-    return trim((string)$html) !== '' ? (string)$html : coming_soon_block();
+    return html_has_visible_content($html) ? (string)$html : coming_soon_block();
 }
