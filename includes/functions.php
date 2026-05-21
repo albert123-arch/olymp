@@ -506,9 +506,10 @@ function html_has_visible_content(?string $html): bool
         return true;
     }
 
-    $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-    $text = preg_replace('/[\s\x{00A0}\x{200B}\x{FEFF}]+/u', '', (string)$text);
-    return $text !== '';
+    $text = strip_tags($html);
+    $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
+    $text = str_replace(["\r", "\n", "\t", ' ', '&nbsp;', "\xc2\xa0"], '', $text);
+    return trim($text) !== '';
 }
 
 function html_or_soon(?string $html): string
