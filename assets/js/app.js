@@ -18,6 +18,10 @@
         }
     }
 
+    window.addEventListener('load', function () {
+        typeset(document.body);
+    });
+
     function key(kind, code) {
         return 'olymp_' + kind + '_' + code;
     }
@@ -100,5 +104,14 @@
         if (!panel.classList.contains('d-none')) {
             typeset(panel);
         }
+    });
+
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function (tab) {
+        tab.addEventListener('shown.bs.tab', function (event) {
+            const target = document.querySelector(event.target.dataset.bsTarget);
+            if (target) {
+                typeset(target);
+            }
+        });
     });
 })();
