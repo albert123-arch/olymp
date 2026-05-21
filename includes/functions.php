@@ -71,11 +71,7 @@ function get_courses($publishedOnly = true)
     }
     try {
         $where = $publishedOnly ? 'WHERE c.is_published = 1' : '';
-        $descriptionExpr = column_exists('course_texts', 'description_html')
-            ? 'ct.description_html'
-            : (column_exists('course_texts', 'overview_html')
-                ? 'COALESCE(ct.overview_html, ct.summary_html)'
-                : 'ct.summary_html');
+        $descriptionExpr = 'ct.description_html';
         $missingExpr = column_exists('course_texts', 'id') ? 'ct.id IS NULL' : 'ct.course_id IS NULL';
         return fetch_all(
             "SELECT c.*, ct.title, {$descriptionExpr} AS description_html,
@@ -95,11 +91,7 @@ function get_courses($publishedOnly = true)
 function get_course_by_slug($slug)
 {
     try {
-        $descriptionExpr = column_exists('course_texts', 'description_html')
-            ? 'ct.description_html'
-            : (column_exists('course_texts', 'overview_html')
-                ? 'COALESCE(ct.overview_html, ct.summary_html)'
-                : 'ct.summary_html');
+        $descriptionExpr = 'ct.description_html';
         $missingExpr = column_exists('course_texts', 'id') ? 'ct.id IS NULL' : 'ct.course_id IS NULL';
         return fetch_one(
             "SELECT c.*, ct.title, {$descriptionExpr} AS description_html,
@@ -118,7 +110,7 @@ function get_course_by_slug($slug)
 function get_chapters_for_course($courseId, $publishedOnly = true)
 {
     $where = $publishedOnly ? 'AND ch.is_published = 1' : '';
-    $descriptionExpr = column_exists('chapter_texts', 'description_html') ? 'txt.description_html' : 'txt.summary_html';
+    $descriptionExpr = 'txt.description_html';
     $missingExpr = column_exists('chapter_texts', 'id') ? 'txt.id IS NULL' : 'txt.chapter_id IS NULL';
     return fetch_all(
         "SELECT ch.*, txt.title, {$descriptionExpr} AS description_html,
@@ -133,7 +125,7 @@ function get_chapters_for_course($courseId, $publishedOnly = true)
 
 function get_chapter_by_slug($courseId, $slug)
 {
-    $descriptionExpr = column_exists('chapter_texts', 'description_html') ? 'txt.description_html' : 'txt.summary_html';
+    $descriptionExpr = 'txt.description_html';
     $missingExpr = column_exists('chapter_texts', 'id') ? 'txt.id IS NULL' : 'txt.chapter_id IS NULL';
     return fetch_one(
         "SELECT ch.*, txt.title, {$descriptionExpr} AS description_html, txt.theory_html, txt.examples_html, txt.worksheet_html, txt.teacher_notes_html,

@@ -23,17 +23,16 @@ ALTER TABLE course_texts
     MODIFY lang VARCHAR(10) NOT NULL,
     ADD COLUMN IF NOT EXISTS description_html MEDIUMTEXT NULL;
 
-UPDATE course_texts
-SET description_html = COALESCE(description_html, overview_html, summary_html)
-WHERE description_html IS NULL OR description_html = '';
-
 ALTER TABLE chapter_texts
     MODIFY lang VARCHAR(10) NOT NULL,
     ADD COLUMN IF NOT EXISTS description_html MEDIUMTEXT NULL;
 
-UPDATE chapter_texts
-SET description_html = COALESCE(description_html, summary_html)
-WHERE description_html IS NULL OR description_html = '';
+ALTER TABLE course_texts
+    DROP COLUMN IF EXISTS summary_html,
+    DROP COLUMN IF EXISTS overview_html;
+
+ALTER TABLE chapter_texts
+    DROP COLUMN IF EXISTS summary_html;
 
 ALTER TABLE problem_texts
     MODIFY lang VARCHAR(10) NOT NULL;
@@ -83,4 +82,3 @@ SELECT id, 'ru', REPLACE(slug, '-', ' ')
 FROM tags;
 
 SET FOREIGN_KEY_CHECKS = 1;
-

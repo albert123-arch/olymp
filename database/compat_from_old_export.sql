@@ -21,16 +21,15 @@ sort_order = VALUES(sort_order);
 ALTER TABLE course_texts
     ADD COLUMN IF NOT EXISTS description_html MEDIUMTEXT NULL;
 
-UPDATE course_texts
-SET description_html = COALESCE(description_html, overview_html, summary_html)
-WHERE description_html IS NULL;
-
 ALTER TABLE chapter_texts
     ADD COLUMN IF NOT EXISTS description_html MEDIUMTEXT NULL;
 
-UPDATE chapter_texts
-SET description_html = COALESCE(description_html, summary_html)
-WHERE description_html IS NULL;
+ALTER TABLE course_texts
+    DROP COLUMN IF EXISTS summary_html,
+    DROP COLUMN IF EXISTS overview_html;
+
+ALTER TABLE chapter_texts
+    DROP COLUMN IF EXISTS summary_html;
 
 ALTER TABLE problems
     ADD COLUMN IF NOT EXISTS problem_type ENUM('computation','proof','counterexample','construction','challenge','mixed') NOT NULL DEFAULT 'mixed' AFTER difficulty;
@@ -54,4 +53,3 @@ SELECT id, 'en', REPLACE(slug, '-', ' ') FROM tags;
 
 INSERT IGNORE INTO tag_texts (tag_id, lang, title)
 SELECT id, 'ru', REPLACE(slug, '-', ' ') FROM tags;
-
