@@ -38,6 +38,9 @@ $courses = has_real_config() ? get_courses(true) : [];
                 <div class="alert alert-danger">
                     <?= e(current_lang() === 'ru' ? 'Ошибка базы данных. Проверьте имя базы, пользователя, пароль и импорт схемы.' : 'Database error. Check database name, user, password, and schema import.') ?>
                     <div class="small mt-2"><?= e($GLOBALS['APP_DB_ERROR']) ?></div>
+                    <?php if (!empty($GLOBALS['APP_CONFIG_PATH'])): ?>
+                        <div class="small mt-1">Config: <?= e($GLOBALS['APP_CONFIG_PATH']) ?></div>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endif; ?>

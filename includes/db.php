@@ -9,12 +9,16 @@ function app_config()
     $configPath = __DIR__ . '/config.php';
     $rootConfigPath = dirname(__DIR__) . '/config.php';
     $examplePath = __DIR__ . '/config.example.php';
+    $GLOBALS['APP_CONFIG_PATH'] = null;
     if (file_exists($configPath)) {
         $config = require $configPath;
+        $GLOBALS['APP_CONFIG_PATH'] = $configPath;
     } elseif (file_exists($rootConfigPath)) {
         $config = require $rootConfigPath;
+        $GLOBALS['APP_CONFIG_PATH'] = $rootConfigPath;
     } else {
         $config = require $examplePath;
+        $GLOBALS['APP_CONFIG_PATH'] = $examplePath;
     }
     if (!isset($config['app'])) {
         $config['app'] = [
@@ -42,6 +46,9 @@ function db()
     }
 
     $config = app_config()['db'];
+    if (empty($config['user']) || empty($config['name'])) {
+        throw new RuntimeException('Database config is missing db.user or db.name. Loaded config: ' . ($GLOBALS['APP_CONFIG_PATH'] ?? 'unknown'));
+    }
     $dsn = sprintf(
         'mysql:host=%s;dbname=%s;charset=%s',
         $config['host'],
