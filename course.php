@@ -3,6 +3,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/functions.php';
 $slug = (string)($_GET['course'] ?? 'number-theory');
 $course = db_available() ? fetch_course($slug) : null;
+$courseTabs = ['overview', 'chapters', 'practice', 'worksheets'];
+if (user_can_manage_content()) {
+    $courseTabs[] = 'teacher_guide';
+}
 $pageTitle = ($course['title'] ?? t('courses')) . ' | ' . t('site_title');
 include __DIR__ . '/includes/layout/header.php';
 ?>
@@ -15,7 +19,7 @@ include __DIR__ . '/includes/layout/header.php';
     <div class="lead text-secondary"><?= html_or_soon($course['summary_html'] ?? '') ?></div>
   </div>
   <ul class="nav nav-tabs hash-tab-nav" role="tablist">
-    <?php foreach (['overview', 'chapters', 'practice', 'worksheets', 'teacher_guide'] as $i => $key): ?>
+    <?php foreach ($courseTabs as $i => $key): ?>
       <li class="nav-item" role="presentation">
         <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" href="#<?= h($key) ?>" role="tab" aria-controls="<?= h($key) ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>"><?= h(t($key)) ?></a>
       </li>
@@ -46,7 +50,9 @@ include __DIR__ . '/includes/layout/header.php';
       <?php endforeach; ?>
     </section>
     <section class="tab-pane" id="worksheets"><?= coming_soon_block() ?></section>
-    <section class="tab-pane" id="teacher_guide"><?= html_or_soon($course['teacher_guide_html'] ?? '') ?></section>
+    <?php if (user_can_manage_content()): ?>
+      <section class="tab-pane" id="teacher_guide"><?= html_or_soon($course['teacher_guide_html'] ?? '') ?></section>
+    <?php endif; ?>
   </div>
   <script>
     (function () {

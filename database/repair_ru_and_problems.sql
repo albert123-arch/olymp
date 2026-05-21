@@ -101,16 +101,138 @@ SELECT p.id, 'ru', s.title_ru, s.statement_html_ru, s.hint_html_ru, s.solution_h
 FROM seed_problem_rows s
 JOIN problems p ON p.problem_code = s.id;
 
-INSERT IGNORE INTO tags (slug)
-SELECT DISTINCT jt.tag
-FROM seed_problem_rows s,
-JSON_TABLE(s.tags, '$[*]' COLUMNS (tag VARCHAR(120) PATH '$')) AS jt;
+INSERT IGNORE INTO tags (slug) VALUES
+('absolute-value'),
+('classification'),
+('consecutive-integers'),
+('coprime'),
+('counterexample'),
+('counting'),
+('definition'),
+('difference'),
+('digits'),
+('divisibility'),
+('divisibility-test'),
+('divisors'),
+('equation'),
+('euclid-lemma'),
+('exponent'),
+('exponents'),
+('expression'),
+('factorial'),
+('factorisation'),
+('gcd'),
+('identity'),
+('impossibility'),
+('integer'),
+('lcm'),
+('linear-combination'),
+('listing'),
+('optimization'),
+('prime'),
+('proof'),
+('remainders'),
+('squares'),
+('tau-function'),
+('trailing-zeros'),
+('transitivity');
+
+DROP TEMPORARY TABLE IF EXISTS seed_problem_tag_rows;
+CREATE TEMPORARY TABLE seed_problem_tag_rows (
+  problem_code VARCHAR(40) NOT NULL,
+  tag_slug VARCHAR(120) NOT NULL,
+  PRIMARY KEY (problem_code, tag_slug)
+) ENGINE=Memory DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO seed_problem_tag_rows (problem_code, tag_slug) VALUES
+('NT-01-001', 'definition'),
+('NT-01-001', 'integer'),
+('NT-01-002', 'proof'),
+('NT-01-002', 'definition'),
+('NT-01-003', 'proof'),
+('NT-01-003', 'linear-combination'),
+('NT-01-004', 'proof'),
+('NT-01-004', 'difference'),
+('NT-01-005', 'factorisation'),
+('NT-01-006', 'factorisation'),
+('NT-01-007', 'divisors'),
+('NT-01-007', 'tau-function'),
+('NT-01-008', 'divisors'),
+('NT-01-008', 'squares'),
+('NT-01-009', 'gcd'),
+('NT-01-009', 'factorisation'),
+('NT-01-010', 'lcm'),
+('NT-01-010', 'factorisation'),
+('NT-01-011', 'gcd'),
+('NT-01-011', 'lcm'),
+('NT-01-011', 'identity'),
+('NT-01-012', 'consecutive-integers'),
+('NT-01-012', 'proof'),
+('NT-01-013', 'consecutive-integers'),
+('NT-01-013', 'proof'),
+('NT-01-014', 'consecutive-integers'),
+('NT-01-014', 'proof'),
+('NT-01-015', 'factorisation'),
+('NT-01-015', 'proof'),
+('NT-01-016', 'prime'),
+('NT-01-016', 'classification'),
+('NT-01-017', 'optimization'),
+('NT-01-017', 'divisors'),
+('NT-01-018', 'optimization'),
+('NT-01-018', 'divisors'),
+('NT-01-019', 'equation'),
+('NT-01-019', 'divisors'),
+('NT-01-020', 'remainders'),
+('NT-01-020', 'expression'),
+('NT-01-021', 'remainders'),
+('NT-01-021', 'squares'),
+('NT-01-022', 'remainders'),
+('NT-01-022', 'squares'),
+('NT-01-022', 'impossibility'),
+('NT-01-023', 'prime'),
+('NT-01-023', 'divisibility'),
+('NT-01-024', 'prime'),
+('NT-01-024', 'remainders'),
+('NT-01-024', 'proof'),
+('NT-01-025', 'factorial'),
+('NT-01-025', 'exponent'),
+('NT-01-026', 'factorial'),
+('NT-01-026', 'trailing-zeros'),
+('NT-01-027', 'counterexample'),
+('NT-01-028', 'prime'),
+('NT-01-028', 'euclid-lemma'),
+('NT-01-029', 'coprime'),
+('NT-01-029', 'divisibility'),
+('NT-01-030', 'divisors'),
+('NT-01-030', 'exponents'),
+('NT-01-031', 'gcd'),
+('NT-01-031', 'divisors'),
+('NT-01-032', 'divisors'),
+('NT-01-032', 'listing'),
+('NT-01-033', 'divisibility-test'),
+('NT-01-033', 'digits'),
+('NT-01-034', 'digits'),
+('NT-01-034', 'divisibility-test'),
+('NT-01-035', 'divisors'),
+('NT-01-035', 'counting'),
+('NT-01-036', 'divisors'),
+('NT-01-036', 'counting'),
+('NT-01-037', 'proof'),
+('NT-01-037', 'transitivity'),
+('NT-01-038', 'proof'),
+('NT-01-038', 'absolute-value'),
+('NT-01-039', 'gcd'),
+('NT-01-039', 'lcm'),
+('NT-01-040', 'proof'),
+('NT-01-040', 'factorisation'),
+('NT-01-040', 'consecutive-integers');
 
 INSERT IGNORE INTO problem_tags (problem_id, tag_id)
 SELECT p.id, t.id
-FROM seed_problem_rows s
-JOIN problems p ON p.problem_code = s.id
-JOIN JSON_TABLE(s.tags, '$[*]' COLUMNS (tag VARCHAR(120) PATH '$')) AS jt
-JOIN tags t ON t.slug COLLATE utf8mb4_unicode_ci = jt.tag COLLATE utf8mb4_unicode_ci;
+FROM seed_problem_tag_rows s
+JOIN problems p ON p.problem_code = s.problem_code
+JOIN tags t ON t.slug COLLATE utf8mb4_unicode_ci = s.tag_slug COLLATE utf8mb4_unicode_ci;
+
+DROP TEMPORARY TABLE IF EXISTS seed_problem_tag_rows;
 
 DROP TEMPORARY TABLE IF EXISTS seed_problem_rows;

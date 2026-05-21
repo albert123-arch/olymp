@@ -5,6 +5,14 @@ require_once __DIR__ . '/lang.php';
 require_once __DIR__ . '/db.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'domain' => '',
+        'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 
@@ -178,12 +186,21 @@ function app_base_url(): string
         return '';
     }
 
-    if (str_contains($scriptName, '/admin/')) {
-        return rtrim((string)strstr($scriptName, '/admin/', true), '/');
+    $scriptPath = trim($scriptName, '/');
+    $parts = $scriptPath === '' ? [] : explode('/', $scriptPath);
+    $rootScripts = ['index.php', 'course.php', 'chapter.php', 'practice.php', 'problem.php', 'login.php', 'logout.php', 'register.php'];
+    $lastPart = end($parts) ?: '';
+
+    if (in_array($lastPart, $rootScripts, true)) {
+        array_pop($parts);
+    } elseif (count($parts) >= 2 && in_array($parts[count($parts) - 2], ['admin', 'api'], true)) {
+        array_pop($parts);
+        array_pop($parts);
+    } else {
+        return '';
     }
 
-    $dir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
-    return $dir === '/' || $dir === '.' ? '' : $dir;
+    return $parts ? '/' . implode('/', $parts) : '';
 }
 
 function url(string $path = '', array $params = []): string

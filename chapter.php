@@ -4,6 +4,18 @@ require_once __DIR__ . '/includes/functions.php';
 $courseSlug = (string)($_GET['course'] ?? 'number-theory');
 $chapterSlug = (string)($_GET['chapter'] ?? 'divisibility-prime-factorisation');
 $chapter = db_available() ? fetch_chapter($courseSlug, $chapterSlug) : null;
+$canManageContent = user_can_manage_content();
+$chapterTabs = ['theory', 'examples', 'practice', 'worksheet'];
+if ($canManageContent) {
+    $chapterTabs[] = 'teacher_notes';
+}
+$activeTab = (string)($_GET['tab'] ?? 'theory');
+if ($activeTab === 'teacher') {
+    $activeTab = 'teacher_notes';
+}
+if (!in_array($activeTab, $chapterTabs, true)) {
+    $activeTab = 'theory';
+}
 $pageTitle = ($chapter['title'] ?? t('chapters')) . ' | ' . t('site_title');
 include __DIR__ . '/includes/layout/header.php';
 ?>
@@ -16,16 +28,16 @@ include __DIR__ . '/includes/layout/header.php';
     <div class="lead text-secondary"><?= html_or_soon($chapter['summary_html'] ?? '') ?></div>
   </div>
   <ul class="nav nav-tabs hash-tab-nav" role="tablist">
-    <?php foreach (['theory', 'examples', 'practice', 'worksheet', 'teacher_notes'] as $i => $key): ?>
+    <?php foreach ($chapterTabs as $i => $key): ?>
       <li class="nav-item" role="presentation">
-        <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" href="#<?= h($key) ?>" role="tab" aria-controls="<?= h($key) ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>"><?= h(t($key)) ?></a>
+        <a class="nav-link <?= $activeTab === $key ? 'active' : '' ?>" href="#<?= h($key) ?>" role="tab" aria-controls="<?= h($key) ?>" aria-selected="<?= $activeTab === $key ? 'true' : 'false' ?>"><?= h(t($key)) ?></a>
       </li>
     <?php endforeach; ?>
   </ul>
   <div class="tab-content hash-tab-content border border-top-0 p-3 p-lg-4 bg-white">
-    <section class="tab-pane active math-content" id="theory"><?= html_or_soon($chapter['theory_html'] ?? '') ?></section>
-    <section class="tab-pane math-content" id="examples"><?= html_or_soon($chapter['examples_html'] ?? '') ?></section>
-    <section class="tab-pane" id="practice">
+    <section class="tab-pane <?= $activeTab === 'theory' ? 'active' : '' ?> math-content" id="theory"><?= html_or_soon($chapter['theory_html'] ?? '') ?></section>
+    <section class="tab-pane <?= $activeTab === 'examples' ? 'active' : '' ?> math-content" id="examples"><?= html_or_soon($chapter['examples_html'] ?? '') ?></section>
+    <section class="tab-pane <?= $activeTab === 'practice' ? 'active' : '' ?>" id="practice">
       <?php $problems = fetch_problems((int)$chapter['id']); ?>
       <?php if (!$problems): ?><?= coming_soon_block() ?><?php endif; ?>
       <p><a class="btn btn-outline-primary" href="<?= h(practice_url($courseSlug, $chapterSlug)) ?>"><?= h(t('practice')) ?></a></p>
@@ -38,14 +50,10 @@ include __DIR__ . '/includes/layout/header.php';
         <?php include __DIR__ . '/includes/components/problem-card.php'; ?>
       <?php endforeach; ?>
     </section>
-    <section class="tab-pane math-content" id="worksheet"><?= html_or_soon($chapter['worksheet_html'] ?? '') ?></section>
-    <section class="tab-pane math-content" id="teacher_notes">
-      <?php if (user_can_manage_content()): ?>
-        <?= html_or_soon($chapter['teacher_notes_html'] ?? '') ?>
-      <?php else: ?>
-        <div class="alert alert-warning"><?= h(t('access_denied')) ?></div>
-      <?php endif; ?>
-    </section>
+    <section class="tab-pane <?= $activeTab === 'worksheet' ? 'active' : '' ?> math-content" id="worksheet"><?= html_or_soon($chapter['worksheet_html'] ?? '') ?></section>
+    <?php if ($canManageContent): ?>
+      <section class="tab-pane <?= $activeTab === 'teacher_notes' ? 'active' : '' ?> math-content" id="teacher_notes"><?= html_or_soon($chapter['teacher_notes_html'] ?? '') ?></section>
+    <?php endif; ?>
   </div>
   <script>
     (function () {

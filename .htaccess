@@ -2,8 +2,10 @@ DirectoryIndex index.php
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  RewriteRule ^number-theory/?$ course.php?course=number-theory [L,QSA]
+  RewriteRule ^number-theory/divisibility/?$ chapter.php?course=number-theory&chapter=divisibility-prime-factorisation [L,QSA]
+  RewriteRule ^number-theory/divisibility/practice/?$ practice.php?course=number-theory&chapter=divisibility-prime-factorisation [L,QSA]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule ^$ index.php [L]
 </IfModule>
-

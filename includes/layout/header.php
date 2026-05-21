@@ -10,10 +10,21 @@ $user = current_user();
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= h($pageTitle) ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="<?= h(asset_url('assets/styles.css')) ?>?v=5" rel="stylesheet">
+  <link href="<?= h(asset_url('assets/styles.css')) ?>?v=6" rel="stylesheet">
   <script>
+    (function () {
+      var serverLang = <?= json_encode(current_lang()) ?>;
+      var params = new URLSearchParams(window.location.search);
+      var savedLang = localStorage.getItem('olymp_lang');
+      if (!params.has('lang') && (savedLang === 'en' || savedLang === 'ru') && savedLang !== serverLang) {
+        params.set('lang', savedLang);
+        window.location.replace(window.location.pathname + '?' + params.toString() + window.location.hash);
+        return;
+      }
+      localStorage.setItem('olymp_lang', serverLang);
+      document.cookie = 'lang=' + serverLang + '; path=/; max-age=31536000; SameSite=Lax';
+    })();
     window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] } };
-    localStorage.setItem('olymp_lang', <?= json_encode(current_lang()) ?>);
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>

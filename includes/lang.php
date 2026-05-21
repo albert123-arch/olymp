@@ -6,7 +6,17 @@ const SUPPORTED_LANGS = ['en', 'ru'];
 function current_lang(): string
 {
     $lang = (string)($_GET['lang'] ?? $_COOKIE['lang'] ?? 'en');
-    return in_array($lang, SUPPORTED_LANGS, true) ? $lang : 'en';
+    $lang = in_array($lang, SUPPORTED_LANGS, true) ? $lang : 'en';
+    if (isset($_GET['lang']) && !headers_sent()) {
+        setcookie('lang', $lang, [
+            'expires' => time() + 60 * 60 * 24 * 365,
+            'path' => '/',
+            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ]);
+    }
+    return $lang;
 }
 
 function t(string $key): string

@@ -23,6 +23,13 @@ body {
   border-radius: 8px;
 }
 
+.problem-card {
+  display: block;
+  flex: 0 0 100%;
+  max-width: 100%;
+  width: 100%;
+}
+
 .course-card .btn,
 .chapter-card .btn {
   align-self: flex-start;
