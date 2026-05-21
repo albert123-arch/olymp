@@ -1,37 +1,28 @@
 <?php
-declare(strict_types=1);
 require_once __DIR__ . '/includes/functions.php';
-
+require_once __DIR__ . '/includes/csrf.php';
 $error = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (login_user((string)($_POST['email'] ?? ''), (string)($_POST['password'] ?? ''))) {
-        header('Location: ' . url('index.php'));
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && has_real_config()) {
+    verify_csrf();
+    if (login_user((string) ($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''))) {
+        header('Location: ' . url('profile.php'));
         exit;
     }
-    $error = t('auth_error');
+    $error = t('invalid_login');
 }
-
-$pageTitle = t('login_title') . ' | ' . t('site_title');
+$pageTitle = t('login');
 include __DIR__ . '/includes/layout/header.php';
 ?>
-<section class="auth-shell mx-auto">
-  <div class="card shadow-sm">
-    <div class="card-body p-4">
-      <h1 class="h3 fw-bold mb-3"><?= h(t('login_title')) ?></h1>
-      <?php if ($error): ?><div class="alert alert-danger"><?= h($error) ?></div><?php endif; ?>
-      <form method="post" class="vstack gap-3">
-        <div>
-          <label class="form-label"><?= h(t('email')) ?></label>
-          <input class="form-control" type="email" name="email" autocomplete="email" required>
-        </div>
-        <div>
-          <label class="form-label"><?= h(t('password')) ?></label>
-          <input class="form-control" type="password" name="password" autocomplete="current-password" required>
-        </div>
-        <button class="btn btn-primary" type="submit"><?= h(t('login')) ?></button>
-      </form>
-      <p class="mb-0 mt-3"><a href="<?= h(url('register.php')) ?>"><?= h(t('register')) ?></a></p>
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <form class="admin-panel p-4" method="post">
+            <?= csrf_field() ?>
+            <h1 class="h4 mb-3"><?= e(t('login')) ?></h1>
+            <?php if ($error): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
+            <label class="form-label"><?= e(t('email')) ?><input class="form-control" type="email" name="email" required></label>
+            <label class="form-label w-100"><?= e(t('password')) ?><input class="form-control" type="password" name="password" required></label>
+            <button class="btn btn-accent w-100" type="submit"><?= e(t('login')) ?></button>
+        </form>
     </div>
-  </div>
-</section>
+</div>
 <?php include __DIR__ . '/includes/layout/footer.php'; ?>

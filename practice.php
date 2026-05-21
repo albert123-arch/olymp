@@ -1,57 +1,26 @@
 <?php
-declare(strict_types=1);
 require_once __DIR__ . '/includes/functions.php';
-$courseSlug = (string)($_GET['course'] ?? '');
-$chapterSlug = (string)($_GET['chapter'] ?? '');
-if (db_available() && $courseSlug === '') {
-    $firstCourse = fetch_first_course();
-    if ($firstCourse) {
-        $courseSlug = $firstCourse['slug'];
-    }
-}
-$course = db_available() && $courseSlug !== '' ? fetch_course($courseSlug) : null;
-$chapter = db_available() && $chapterSlug !== '' ? fetch_chapter($courseSlug, $chapterSlug) : null;
-$problems = db_available() && $course ? fetch_problems($chapter ? (int)$chapter['id'] : null, (int)$course['id']) : [];
-$pageTitle = t('practice') . ' | ' . t('site_title');
+$courseSlug = (string) ($_GET['course'] ?? 'number-theory');
+$chapterSlug = (string) ($_GET['chapter'] ?? '');
+$course = has_real_config() ? get_course_by_slug($courseSlug) : null;
+$chapter = ($course && $chapterSlug) ? get_chapter_by_slug((int) $course['id'], $chapterSlug) : null;
+$filters = [];
+if ($course) { $filters['course_id'] = (int) $course['id']; }
+if ($chapter) { $filters['chapter_id'] = (int) $chapter['id']; }
+$problems = has_real_config() ? get_problems($filters) : [];
+$pageTitle = t('practice');
 include __DIR__ . '/includes/layout/header.php';
 ?>
-<h1 class="fw-bold mb-4"><?= h(t('practice')) ?></h1>
-<?php if (!db_available()): ?>
-  <?php render_db_notice(); ?>
-<?php else: ?>
-  <?php if (!$course || ($chapterSlug !== '' && !$chapter)): ?>
-    <?= coming_soon_block() ?>
-  <?php endif; ?>
-  <div class="toolbar practice-toolbar">
-    <label>
-      <span><?= h(t('search')) ?></span>
-      <input id="searchInput" type="search" class="form-control" autocomplete="off">
-    </label>
-    <label>
-      <span><?= h(t('difficulty')) ?></span>
-      <select id="difficultyFilter" class="form-select">
-        <option value=""><?= h(t('all')) ?></option>
-        <option value="level1"><?= h(t('level1')) ?></option>
-        <option value="level2"><?= h(t('level2')) ?></option>
-        <option value="level3"><?= h(t('level3')) ?></option>
-      </select>
-    </label>
-    <label>
-      <span><?= h(t('type')) ?></span>
-      <select id="typeFilter" class="form-select">
-        <option value=""><?= h(t('all')) ?></option>
-        <option value="proof"><?= h(t('proof')) ?></option>
-        <option value="computation"><?= h(t('computation')) ?></option>
-        <option value="counterexample"><?= h(t('counterexample')) ?></option>
-        <option value="warmup"><?= h(t('warmup')) ?></option>
-      </select>
-    </label>
-  </div>
-  <?php if (!$problems): ?>
-    <?= coming_soon_block() ?>
-  <?php endif; ?>
-  <?php foreach ($problems as $problem): ?>
-    <?php include __DIR__ . '/includes/components/problem-card.php'; ?>
-  <?php endforeach; ?>
-<?php endif; ?>
+<div class="mb-4">
+    <a class="small text-decoration-none" href="<?= e($chapter ? chapter_url($course['slug'], $chapter['slug']) : course_url($courseSlug)) ?>">&larr; <?= e($chapter ? t('back_to_chapter') : t('back_to_course')) ?></a>
+    <h1 class="mt-2"><?= e(t('practice')) ?></h1>
+    <div class="text-muted"><?= e($chapter['title'] ?? $course['title'] ?? t('number_theory')) ?></div>
+</div>
+<div class="row">
+    <div class="col-lg-9">
+        <?php foreach ($problems as $problem): include __DIR__ . '/includes/components/problem-card.php'; endforeach; ?>
+        <?php if (!$problems): ?><div class="alert alert-info"><?= e(t('no_items')) ?></div><?php endif; ?>
+    </div>
+</div>
 <?php include __DIR__ . '/includes/layout/footer.php'; ?>
+

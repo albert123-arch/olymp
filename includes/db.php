@@ -1,34 +1,39 @@
 <?php
 declare(strict_types=1);
 
-function db_config(): array
+function app_config(): array
 {
-    $defaults = [
-        'host' => '127.0.0.1',
-        'database' => 'olymp',
-        'username' => 'root',
-        'password' => '',
-        'charset' => 'utf8mb4',
-    ];
-
-    $configFile = dirname(__DIR__) . '/config.php';
-    if (is_file($configFile)) {
-        $custom = require $configFile;
-        if (is_array($custom)) {
-            if (isset($custom['db']) && is_array($custom['db'])) {
-                $custom = [
-                    'host' => $custom['db']['host'] ?? $defaults['host'],
-                    'database' => $custom['db']['database'] ?? $custom['db']['name'] ?? $defaults['database'],
-                    'username' => $custom['db']['username'] ?? $custom['db']['user'] ?? $defaults['username'],
-                    'password' => $custom['db']['password'] ?? $defaults['password'],
-                    'charset' => $custom['db']['charset'] ?? $defaults['charset'],
-                ];
-            }
-            return array_merge($defaults, $custom);
-        }
+    static $config = null;
+    if ($config !== null) {
+        return $config;
     }
 
-    return $defaults;
+    $configPath = __DIR__ . '/config.php';
+    $rootConfigPath = dirname(__DIR__) . '/config.php';
+    $examplePath = __DIR__ . '/config.example.php';
+    if (file_exists($configPath)) {
+        $config = require $configPath;
+    } elseif (file_exists($rootConfigPath)) {
+        $config = require $rootConfigPath;
+    } else {
+        $config = require $examplePath;
+    }
+    if (!isset($config['app'])) {
+        $config['app'] = [
+            'base_url' => $config['base_url'] ?? '',
+            'default_lang' => 'ru',
+            'debug' => false,
+        ];
+    }
+    if (isset($config['db']['password']) && !isset($config['db']['pass'])) {
+        $config['db']['pass'] = $config['db']['password'];
+    }
+    return $config;
+}
+
+function has_real_config(): bool
+{
+    return file_exists(__DIR__ . '/config.php') || file_exists(dirname(__DIR__) . '/config.php');
 }
 
 function db(): PDO
@@ -38,22 +43,40 @@ function db(): PDO
         return $pdo;
     }
 
-    $c = db_config();
-    $dsn = sprintf('mysql:host=%s;dbname=%s;charset=%s', $c['host'], $c['database'], $c['charset']);
-    $pdo = new PDO($dsn, $c['username'], $c['password'], [
+    $config = app_config()['db'];
+    $dsn = sprintf(
+        'mysql:host=%s;dbname=%s;charset=%s',
+        $config['host'],
+        $config['name'],
+        $config['charset'] ?? 'utf8mb4'
+    );
+
+    $pdo = new PDO($dsn, $config['user'], $config['pass'], [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
+
     return $pdo;
 }
 
-function db_available(): bool
+function fetch_all(string $sql, array $params = []): array
 {
-    try {
-        db()->query('SELECT 1');
-        return true;
-    } catch (Throwable) {
-        return false;
-    }
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll();
+}
+
+function fetch_one(string $sql, array $params = []): ?array
+{
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+function execute_query(string $sql, array $params = []): bool
+{
+    $stmt = db()->prepare($sql);
+    return $stmt->execute($params);
 }

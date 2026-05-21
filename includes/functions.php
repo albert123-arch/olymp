@@ -2,263 +2,39 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/lang.php';
-require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/auth.php';
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_set_cookie_params([
-        'lifetime' => 0,
-        'path' => '/',
-        'domain' => '',
-        'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
-        'httponly' => true,
-        'samesite' => 'Lax',
-    ]);
-    session_start();
-}
-
-function h(?string $value): string
+function e(?string $value): string
 {
-    return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
-function current_user(): ?array
+function base_path(): string
 {
-    if (empty($_SESSION['user_id']) || !db_available()) {
-        return null;
-    }
-
-    $stmt = db()->prepare('SELECT id, name, email, role FROM users WHERE id = ? LIMIT 1');
-    $stmt->execute([(int)$_SESSION['user_id']]);
-    $user = $stmt->fetch();
-    if (!$user) {
-        unset($_SESSION['user_id']);
-        return null;
-    }
-    return $user;
+    $base = app_config()['app']['base_url'] ?? '';
+    return rtrim((string) $base, '/');
 }
 
-function user_can_manage_content(?array $user = null): bool
-{
-    $user ??= current_user();
-    return in_array((string)($user['role'] ?? ''), ['admin', 'teacher'], true);
-}
-
-function db_table_exists(string $table): bool
-{
-    if (!preg_match('/^[A-Za-z0-9_]+$/', $table)) {
-        return false;
-    }
-
-    try {
-        $stmt = db()->prepare(
-            'SELECT COUNT(*)
-             FROM information_schema.tables
-             WHERE table_schema = DATABASE() AND table_name = ?'
-        );
-        $stmt->execute([$table]);
-        return (int)$stmt->fetchColumn() > 0;
-    } catch (Throwable) {
-        return false;
-    }
-}
-
-function db_column_exists(string $table, string $column): bool
-{
-    if (!preg_match('/^[A-Za-z0-9_]+$/', $table) || !preg_match('/^[A-Za-z0-9_]+$/', $column)) {
-        return false;
-    }
-
-    try {
-        $stmt = db()->prepare(
-            'SELECT COUNT(*)
-             FROM information_schema.columns
-             WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?'
-        );
-        $stmt->execute([$table, $column]);
-        return (int)$stmt->fetchColumn() > 0;
-    } catch (Throwable) {
-        return false;
-    }
-}
-
-function db_has_user_problem_tables(): array
-{
-    return [
-        'bookmarks' => db_table_exists('bookmarks')
-            && db_column_exists('bookmarks', 'user_id')
-            && db_column_exists('bookmarks', 'problem_id'),
-        'progress' => db_table_exists('user_problem_progress')
-            && db_column_exists('user_problem_progress', 'user_id')
-            && db_column_exists('user_problem_progress', 'problem_id')
-            && db_column_exists('user_problem_progress', 'status'),
-    ];
-}
-
-function db_has_problem_tag_tables(): bool
-{
-    return db_table_exists('tags')
-        && db_column_exists('tags', 'id')
-        && db_column_exists('tags', 'slug')
-        && db_table_exists('problem_tags')
-        && db_column_exists('problem_tags', 'problem_id')
-        && db_column_exists('problem_tags', 'tag_id');
-}
-
-function require_content_manager(): void
-{
-    if (!user_can_manage_content()) {
-        header('Location: ' . url('login.php'));
-        exit;
-    }
-}
-
-function login_user(string $email, string $password): bool
-{
-    if (!db_available()) {
-        return false;
-    }
-
-    $stmt = db()->prepare('SELECT id, password_hash FROM users WHERE email = ? LIMIT 1');
-    $stmt->execute([trim($email)]);
-    $user = $stmt->fetch();
-    if (!$user || !password_verify($password, (string)$user['password_hash'])) {
-        return false;
-    }
-
-    session_regenerate_id(true);
-    $_SESSION['user_id'] = (int)$user['id'];
-    return true;
-}
-
-function logout_user(): void
-{
-    $_SESSION = [];
-    if (ini_get('session.use_cookies')) {
-        $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], (bool)$params['secure'], (bool)$params['httponly']);
-    }
-    session_destroy();
-}
-
-function register_user(string $name, string $email, string $password): array
-{
-    $name = trim($name);
-    $email = trim($email);
-    if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8) {
-        return [false, t('register_error')];
-    }
-    if (!db_available()) {
-        return [false, t('missing_db')];
-    }
-
-    try {
-        $stmt = db()->prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)');
-        $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), 'student']);
-        session_regenerate_id(true);
-        $_SESSION['user_id'] = (int)db()->lastInsertId();
-        return [true, ''];
-    } catch (PDOException $e) {
-        if ($e->getCode() === '23000') {
-            return [false, t('email_exists')];
-        }
-        return [false, t('register_error')];
-    }
-}
-
-function app_base_url(): string
-{
-    $configFile = dirname(__DIR__) . '/config.php';
-    if (is_file($configFile)) {
-        $config = require $configFile;
-        if (is_array($config)) {
-            $configuredBase = rtrim((string)($config['base_url'] ?? $config['BASE_URL'] ?? ''), '/');
-            if ($configuredBase !== '') {
-                if (!preg_match('#^(https?:)?//#', $configuredBase) && !str_starts_with($configuredBase, '/') && !str_starts_with($configuredBase, '.')) {
-                    $configuredBase = '/' . $configuredBase;
-                }
-                return $configuredBase;
-            }
-        }
-    }
-
-    $scriptName = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
-    if ($scriptName === '') {
-        return '';
-    }
-
-    $scriptPath = trim($scriptName, '/');
-    $parts = $scriptPath === '' ? [] : explode('/', $scriptPath);
-    $rootScripts = ['index.php', 'course.php', 'chapter.php', 'practice.php', 'problem.php', 'login.php', 'logout.php', 'register.php'];
-    $lastPart = end($parts) ?: '';
-
-    if (in_array($lastPart, $rootScripts, true)) {
-        array_pop($parts);
-    } elseif (count($parts) >= 2 && in_array($parts[count($parts) - 2], ['admin', 'api'], true)) {
-        array_pop($parts);
-        array_pop($parts);
-    } else {
-        return '';
-    }
-
-    return $parts ? '/' . implode('/', $parts) : '';
-}
-
-function url(string $path = '', array $params = []): string
+function url(string $path, array $params = []): string
 {
     $params = array_merge(['lang' => current_lang()], $params);
-    $query = http_build_query($params);
-    $base = app_base_url();
-    $cleanPath = ltrim($path, '/');
-    $prefix = $base !== '' ? $base : '';
-    return $prefix . '/' . $cleanPath . ($query ? '?' . $query : '');
+    return base_path() . '/' . ltrim($path, '/') . ($params ? '?' . http_build_query($params) : '');
 }
 
-function asset_url(string $path): string
+function course_url(string $courseSlug): string
 {
-    $base = app_base_url();
-    $cleanPath = ltrim($path, '/');
-    $prefix = $base !== '' ? $base : '';
-    return $prefix . '/' . $cleanPath;
-}
-
-function app_url(string $path = '', array $params = []): string
-{
-    return url($path, $params);
-}
-
-function course_url(string $courseSlug = ''): string
-{
-    if ($courseSlug === '' && db_available()) {
-        $slug = fetch_first_course_slug();
-        $courseSlug = $slug ?? '';
-    }
     return url('course.php', ['course' => $courseSlug]);
 }
 
-function chapter_url(string $courseSlug = '', string $chapterSlug = ''): string
+function chapter_url(string $courseSlug, string $chapterSlug): string
 {
-    if ($courseSlug === '' && db_available()) {
-        $firstCourse = fetch_first_course();
-        $courseSlug = $firstCourse['slug'] ?? '';
-    }
-    if ($chapterSlug === '' && $courseSlug !== '' && db_available()) {
-        $course = fetch_course($courseSlug);
-        if ($course) {
-            $firstChapter = fetch_first_chapter((int)$course['id']);
-            $chapterSlug = $firstChapter['slug'] ?? '';
-        }
-    }
     return url('chapter.php', ['course' => $courseSlug, 'chapter' => $chapterSlug]);
 }
 
-function practice_url(string $courseSlug = '', ?string $chapterSlug = null): string
+function practice_url(string $courseSlug, ?string $chapterSlug = null): string
 {
-    if ($courseSlug === '' && db_available()) {
-        $slug = fetch_first_course_slug();
-        $courseSlug = $slug ?? '';
-    }
     $params = ['course' => $courseSlug];
-    if ($chapterSlug !== null && $chapterSlug !== '') {
+    if ($chapterSlug !== null) {
         $params['chapter'] = $chapterSlug;
     }
     return url('practice.php', $params);
@@ -269,365 +45,166 @@ function problem_url(string $problemCode): string
     return url('problem.php', ['code' => $problemCode]);
 }
 
-function fetch_all_courses(): array
+function setup_guard(): void
 {
-    try {
-        $stmt = db()->prepare(
-            'SELECT c.*, ct.title, ct.summary_html
-             FROM courses c
-             JOIN course_texts ct ON ct.course_id = c.id AND ct.lang = :lang
-             WHERE c.is_published = 1
-             ORDER BY c.sort_order, c.id'
-        );
-        $stmt->execute(['lang' => current_lang()]);
-        return $stmt->fetchAll();
-    } catch (Throwable) {
+    if (!has_real_config()) {
+        echo '<div class="alert alert-warning my-4">' . e(t('setup_required')) . '</div>';
+    }
+}
+
+function localized_select(string $baseTable, string $textTable, string $joinKey, string $alias = 't'): string
+{
+    return "LEFT JOIN {$textTable} {$alias} ON {$alias}.{$joinKey} = {$baseTable}.id AND {$alias}.lang = :lang";
+}
+
+function missing_translation_badge(?array $row): string
+{
+    if ($row && !empty($row['translation_missing'])) {
+        return '<span class="badge text-bg-warning ms-2">' . e(t('missing_translation')) . '</span>';
+    }
+    return '';
+}
+
+function get_courses(bool $publishedOnly = true): array
+{
+    if (!has_real_config()) {
         return [];
     }
+    $where = $publishedOnly ? 'WHERE c.is_published = 1' : '';
+    return fetch_all(
+        "SELECT c.*, ct.title, ct.description_html,
+                CASE WHEN ct.id IS NULL THEN 1 ELSE 0 END AS translation_missing
+         FROM courses c
+         LEFT JOIN course_texts ct ON ct.course_id = c.id AND ct.lang = :lang
+         {$where}
+         ORDER BY c.sort_order, c.id",
+        ['lang' => current_lang()]
+    );
 }
 
-function fetch_course(string $slug): ?array
+function get_course_by_slug(string $slug): ?array
 {
-    try {
-        $stmt = db()->prepare(
-            'SELECT c.*, ct.title, ct.summary_html, ct.overview_html, ct.teacher_guide_html
-             FROM courses c
-             JOIN course_texts ct ON ct.course_id = c.id AND ct.lang = :lang
-             WHERE c.slug = :slug AND c.is_published = 1'
+    return fetch_one(
+        "SELECT c.*, ct.title, ct.description_html,
+                CASE WHEN ct.id IS NULL THEN 1 ELSE 0 END AS translation_missing
+         FROM courses c
+         LEFT JOIN course_texts ct ON ct.course_id = c.id AND ct.lang = :lang
+         WHERE c.slug = :slug",
+        ['lang' => current_lang(), 'slug' => $slug]
+    );
+}
+
+function get_chapters_for_course(int $courseId, bool $publishedOnly = true): array
+{
+    $where = $publishedOnly ? 'AND ch.is_published = 1' : '';
+    return fetch_all(
+        "SELECT ch.*, txt.title, txt.description_html,
+                CASE WHEN txt.id IS NULL THEN 1 ELSE 0 END AS translation_missing
+         FROM chapters ch
+         LEFT JOIN chapter_texts txt ON txt.chapter_id = ch.id AND txt.lang = :lang
+         WHERE ch.course_id = :course_id {$where}
+         ORDER BY ch.sort_order, ch.id",
+        ['lang' => current_lang(), 'course_id' => $courseId]
+    );
+}
+
+function get_chapter_by_slug(int $courseId, string $slug): ?array
+{
+    return fetch_one(
+        "SELECT ch.*, txt.title, txt.description_html, txt.theory_html, txt.examples_html, txt.worksheet_html, txt.teacher_notes_html,
+                CASE WHEN txt.id IS NULL THEN 1 ELSE 0 END AS translation_missing
+         FROM chapters ch
+         LEFT JOIN chapter_texts txt ON txt.chapter_id = ch.id AND txt.lang = :lang
+         WHERE ch.course_id = :course_id AND ch.slug = :slug",
+        ['lang' => current_lang(), 'course_id' => $courseId, 'slug' => $slug]
+    );
+}
+
+function get_problem_tags(int $problemId): array
+{
+    return fetch_all(
+        "SELECT tg.slug, tt.title
+         FROM problem_tags pt
+         JOIN tags tg ON tg.id = pt.tag_id
+         LEFT JOIN tag_texts tt ON tt.tag_id = tg.id AND tt.lang = :lang
+         WHERE pt.problem_id = :problem_id
+         ORDER BY tt.title, tg.slug",
+        ['lang' => current_lang(), 'problem_id' => $problemId]
+    );
+}
+
+function get_problems(array $filters = []): array
+{
+    $where = ['p.is_published = 1'];
+    $params = ['lang' => current_lang()];
+    if (!empty($filters['chapter_id'])) {
+        $where[] = 'p.chapter_id = :chapter_id';
+        $params['chapter_id'] = (int) $filters['chapter_id'];
+    }
+    if (!empty($filters['course_id'])) {
+        $where[] = 'ch.course_id = :course_id';
+        $params['course_id'] = (int) $filters['course_id'];
+    }
+    $whereSql = implode(' AND ', $where);
+    return fetch_all(
+        "SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html,
+                ch.slug AS chapter_slug, c.slug AS course_slug,
+                CASE WHEN pt.id IS NULL THEN 1 ELSE 0 END AS translation_missing
+         FROM problems p
+         JOIN chapters ch ON ch.id = p.chapter_id
+         JOIN courses c ON c.id = ch.course_id
+         LEFT JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
+         WHERE {$whereSql}
+         ORDER BY p.sort_order, p.book_number, p.id",
+        $params
+    );
+}
+
+function get_problem_by_code(string $code): ?array
+{
+    return fetch_one(
+        "SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
+                ch.slug AS chapter_slug, c.slug AS course_slug, ch.id AS chapter_id,
+                CASE WHEN pt.id IS NULL THEN 1 ELSE 0 END AS translation_missing
+         FROM problems p
+         JOIN chapters ch ON ch.id = p.chapter_id
+         JOIN courses c ON c.id = ch.course_id
+         LEFT JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
+         WHERE p.problem_code = :code",
+        ['lang' => current_lang(), 'code' => $code]
+    );
+}
+
+function render_stars(int $difficulty): string
+{
+    $difficulty = max(1, min(3, $difficulty));
+    return '<span class="stars" aria-label="' . e(t('level') . ' ' . $difficulty . ' ' . t('out_of_3')) . '">' .
+        str_repeat('★', $difficulty) . str_repeat('☆', 3 - $difficulty) .
+        '</span>';
+}
+
+function save_bookmark(int $userId, int $problemId, bool $enabled): void
+{
+    if ($enabled) {
+        execute_query(
+            'INSERT IGNORE INTO bookmarks (user_id, problem_id, created_at) VALUES (?, ?, NOW())',
+            [$userId, $problemId]
         );
-        $stmt->execute(['lang' => current_lang(), 'slug' => $slug]);
-        $row = $stmt->fetch();
-        return $row ?: null;
-    } catch (Throwable) {
-        return null;
+        return;
     }
+    execute_query('DELETE FROM bookmarks WHERE user_id = ? AND problem_id = ?', [$userId, $problemId]);
 }
 
-function fetch_first_course(): ?array
+function save_problem_progress(int $userId, int $problemId, string $status): void
 {
-    try {
-        $stmt = db()->prepare(
-            'SELECT c.*, ct.title, ct.summary_html, ct.overview_html, ct.teacher_guide_html
-             FROM courses c
-             JOIN course_texts ct ON ct.course_id = c.id AND ct.lang = :lang
-             WHERE c.is_published = 1
-             ORDER BY c.sort_order, c.id
-             LIMIT 1'
-        );
-        $stmt->execute(['lang' => current_lang()]);
-        $row = $stmt->fetch();
-        return $row ?: null;
-    } catch (Throwable) {
-        return null;
+    $allowed = ['not_started', 'viewed', 'solved', 'needs_review'];
+    if (!in_array($status, $allowed, true)) {
+        return;
     }
-}
-
-function fetch_first_course_slug(): ?string
-{
-    $course = fetch_first_course();
-    return $course['slug'] ?? null;
-}
-
-function fetch_first_chapter(int $courseId): ?array
-{
-    try {
-        $stmt = db()->prepare(
-            'SELECT ch.*, c.slug AS course_slug,
-                    COALESCE(cht.title, ch.slug) AS title,
-                    COALESCE(cht.summary_html, "") AS summary_html,
-                    COALESCE(cht.theory_html, "") AS theory_html,
-                    COALESCE(cht.examples_html, "") AS examples_html,
-                    COALESCE(cht.worksheet_html, "") AS worksheet_html,
-                    COALESCE(cht.teacher_notes_html, "") AS teacher_notes_html
-             FROM chapters ch
-             JOIN courses c ON c.id = ch.course_id
-             LEFT JOIN chapter_texts cht ON cht.chapter_id = ch.id AND cht.lang = :lang
-             WHERE ch.course_id = :course_id AND ch.is_published = 1
-             ORDER BY ch.sort_order, ch.id
-             LIMIT 1'
-        );
-        $stmt->execute(['lang' => current_lang(), 'course_id' => $courseId]);
-        $row = $stmt->fetch();
-        return $row ?: null;
-    } catch (Throwable) {
-        return null;
-    }
-}
-
-function fetch_chapters(int $courseId): array
-{
-    try {
-        $stmt = db()->prepare(
-            'SELECT ch.*, COALESCE(cht.title, ch.slug) AS title, COALESCE(cht.summary_html, "") AS summary_html
-             FROM chapters ch
-             LEFT JOIN chapter_texts cht ON cht.chapter_id = ch.id AND cht.lang = :lang
-             WHERE ch.course_id = :course_id AND ch.is_published = 1
-             ORDER BY ch.sort_order, ch.id'
-        );
-        $stmt->execute(['lang' => current_lang(), 'course_id' => $courseId]);
-        return $stmt->fetchAll();
-    } catch (Throwable) {
-        return [];
-    }
-}
-
-function fetch_chapter(string $courseSlug, string $chapterSlug): ?array
-{
-    try {
-        $stmt = db()->prepare(
-            'SELECT ch.*, c.slug AS course_slug,
-                    COALESCE(cht.title, ch.slug) AS title,
-                    COALESCE(cht.summary_html, "") AS summary_html,
-                    COALESCE(cht.theory_html, "") AS theory_html,
-                    COALESCE(cht.examples_html, "") AS examples_html,
-                    COALESCE(cht.worksheet_html, "") AS worksheet_html,
-                    COALESCE(cht.teacher_notes_html, "") AS teacher_notes_html
-             FROM chapters ch
-             JOIN courses c ON c.id = ch.course_id
-             LEFT JOIN chapter_texts cht ON cht.chapter_id = ch.id AND cht.lang = :lang
-             WHERE c.slug = :course_slug AND ch.slug = :chapter_slug AND ch.is_published = 1'
-        );
-        $stmt->execute(['lang' => current_lang(), 'course_slug' => $courseSlug, 'chapter_slug' => $chapterSlug]);
-        $row = $stmt->fetch();
-        return $row ?: null;
-    } catch (Throwable) {
-        return null;
-    }
-}
-
-function fetch_problems(?int $chapterId = null, ?int $courseId = null): array
-{
-    try {
-        $hasTags = db_has_problem_tag_tables();
-        $tagSelect = $hasTags ? 'COALESCE(tag_list.tags_csv, "")' : '""';
-        $tagJoin = $hasTags ? 'LEFT JOIN (
-                    SELECT ptag.problem_id, GROUP_CONCAT(t.slug ORDER BY t.slug SEPARATOR ",") AS tags_csv
-                    FROM problem_tags ptag
-                    JOIN tags t ON t.id = ptag.tag_id
-                    GROUP BY ptag.problem_id
-                ) tag_list ON tag_list.problem_id = p.id' : '';
-        $sql = 'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
-                       ' . $tagSelect . ' AS tags_csv
-                FROM problems p
-                JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
-                ' . $tagJoin . '
-                WHERE p.is_published = 1';
-        $params = ['lang' => current_lang()];
-        if ($chapterId !== null) {
-            $sql .= ' AND p.chapter_id = :chapter_id';
-            $params['chapter_id'] = $chapterId;
-        } elseif ($courseId !== null) {
-            $sql .= ' AND p.chapter_id IN (SELECT id FROM chapters WHERE course_id = :course_id)';
-            $params['course_id'] = $courseId;
-        }
-        $sql .= ' ORDER BY p.sort_order, p.id';
-        $stmt = db()->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll();
-    } catch (Throwable) {
-        return [];
-    }
-}
-
-function fetch_problem(string $code): ?array
-{
-    try {
-        $hasTags = db_has_problem_tag_tables();
-        $tagSelect = $hasTags ? 'COALESCE(tag_list.tags_csv, "")' : '""';
-        $tagJoin = $hasTags ? 'LEFT JOIN (
-                 SELECT ptag.problem_id, GROUP_CONCAT(t.slug ORDER BY t.slug SEPARATOR ",") AS tags_csv
-                 FROM problem_tags ptag
-                 JOIN tags t ON t.id = ptag.tag_id
-                 GROUP BY ptag.problem_id
-             ) tag_list ON tag_list.problem_id = p.id' : '';
-        $stmt = db()->prepare(
-            'SELECT p.*, pt.title, pt.statement_html, pt.hint_html, pt.solution_html, pt.teacher_note_html,
-                    ch.slug AS chapter_slug, c.slug AS course_slug,
-                    ' . $tagSelect . ' AS tags_csv
-             FROM problems p
-             JOIN problem_texts pt ON pt.problem_id = p.id AND pt.lang = :lang
-             JOIN chapters ch ON ch.id = p.chapter_id
-             JOIN courses c ON c.id = ch.course_id
-             ' . $tagJoin . '
-             WHERE p.problem_code = :code AND p.is_published = 1
-             LIMIT 1'
-        );
-        $stmt->execute(['lang' => current_lang(), 'code' => $code]);
-        $row = $stmt->fetch();
-        return $row ?: null;
-    } catch (Throwable) {
-        return null;
-    }
-}
-
-function fetch_problem_media(int $problemId, string $role): array
-{
-    try {
-        $stmt = db()->prepare(
-            'SELECT pm.*, pmt.alt_text, pmt.caption_html
-             FROM problem_media pm
-             LEFT JOIN problem_media_texts pmt ON pmt.media_id = pm.id AND pmt.lang = :lang
-             WHERE pm.problem_id = :problem_id AND pm.role = :role
-             ORDER BY pm.sort_order, pm.id'
-        );
-        $stmt->execute(['lang' => current_lang(), 'problem_id' => $problemId, 'role' => $role]);
-        return $stmt->fetchAll();
-    } catch (Throwable) {
-        return [];
-    }
-}
-
-function difficulty_label(string $difficulty): string
-{
-    return match ($difficulty) {
-        'intro' => t('level1'),
-        'challenge' => t('challenge_problem'),
-        default => t('level2'),
-    };
-}
-
-function difficulty_level_key(string $difficulty): string
-{
-    return match ($difficulty) {
-        'intro' => 'level1',
-        'challenge' => 'level3',
-        default => 'level2',
-    };
-}
-
-function problem_type_key(array $problem): string
-{
-    $tags = array_filter(explode(',', (string)($problem['tags_csv'] ?? '')));
-    if (in_array('warmup', $tags, true) || in_array('olympiad', $tags, true)) {
-        return 'warmup';
-    }
-    if (in_array('counterexample', $tags, true)) {
-        return 'counterexample';
-    }
-    if (in_array('proof', $tags, true) || in_array('consecutive-integers', $tags, true)) {
-        return 'proof';
-    }
-    return 'computation';
-}
-
-function tag_label(string $tag, ?string $lang = null): string
-{
-    $lang ??= current_lang();
-    $ruLabels = [
-        'absolute-value' => 'Модуль',
-        'classification' => 'Классификация',
-        'consecutive-integers' => 'Последовательные числа',
-        'coprime' => 'Взаимно простые',
-        'counterexample' => 'Контрпример',
-        'counting' => 'Подсчет',
-        'definition' => 'Определение',
-        'difference' => 'Разность',
-        'digits' => 'Цифры',
-        'divisibility' => 'Делимость',
-        'divisibility-test' => 'Признаки делимости',
-        'divisors' => 'Делители',
-        'divisor-counting' => 'Подсчет делителей',
-        'equation' => 'Уравнение',
-        'exponent' => 'Показатель',
-        'exponents' => 'Показатели',
-        'expression' => 'Выражение',
-        'factorial' => 'Факториал',
-        'factorisation' => 'Разложение на множители',
-        'prime-factorisation' => 'Разложение на простые множители',
-        'gcd' => 'НОД',
-        'identity' => 'Тождество',
-        'impossibility' => 'Невозможность',
-        'integer' => 'Целые числа',
-        'lcm' => 'НОК',
-        'linear-combination' => 'Линейная комбинация',
-        'listing' => 'Перечисление',
-        'modular-arithmetic' => 'Сравнения',
-        'optimization' => 'Оптимизация',
-        'prime' => 'Простые числа',
-        'proof' => 'Доказательство',
-        'remainder' => 'Остатки',
-        'remainders' => 'Остатки',
-        'squares' => 'Квадраты',
-        'tau-function' => 'Число делителей',
-        'trailing-zeros' => 'Нули в конце',
-        'transitivity' => 'Транзитивность',
-    ];
-    if ($lang === 'ru' && array_key_exists($tag, $ruLabels)) {
-        return $ruLabels[$tag];
-    }
-    $labels = [
-        'ru' => [
-            'absolute-value' => 'Модуль',
-            'classification' => 'Классификация',
-            'consecutive-integers' => 'Последовательные числа',
-            'coprime' => 'Взаимно простые',
-            'counterexample' => 'Контрпример',
-            'counting' => 'Подсчет',
-            'definition' => 'Определение',
-            'difference' => 'Разность',
-            'digits' => 'Цифры',
-            'divisibility' => 'Делимость',
-            'divisibility-test' => 'Признаки делимости',
-            'divisors' => 'Делители',
-            'divisor-counting' => 'Подсчет делителей',
-            'equation' => 'Уравнение',
-            'exponent' => 'Показатель',
-            'exponents' => 'Показатели',
-            'expression' => 'Выражение',
-            'factorial' => 'Факториал',
-            'factorisation' => 'Разложение на множители',
-            'prime-factorisation' => 'Разложение на простые множители',
-            'gcd' => 'НОД',
-            'identity' => 'Тождество',
-            'impossibility' => 'Невозможность',
-            'integer' => 'Целые числа',
-            'lcm' => 'НОК',
-            'linear-combination' => 'Линейная комбинация',
-            'listing' => 'Перечисление',
-            'modular-arithmetic' => 'Сравнения',
-            'optimization' => 'Оптимизация',
-            'prime' => 'Простые числа',
-            'proof' => 'Доказательство',
-            'remainder' => 'Остатки',
-            'remainders' => 'Остатки',
-            'squares' => 'Квадраты',
-            'tau-function' => 'Число делителей',
-            'trailing-zeros' => 'Нули в конце',
-            'transitivity' => 'Транзитивность',
-        ],
-    ];
-
-    return $labels[$lang][$tag] ?? $tag;
-}
-
-function render_db_notice(): void
-{
-    echo '<div class="alert alert-warning my-4">' . h(t('missing_db')) . '</div>';
-}
-
-function coming_soon_block(): string
-{
-    return '<div class="text-secondary py-2">' . h(t('coming_soon_status')) . '</div>';
-}
-
-function html_has_visible_content(?string $html): bool
-{
-    $html = trim((string)$html);
-    if ($html === '') {
-        return false;
-    }
-
-    if (preg_match('/<(img|video|iframe|audio|table|svg|math)\b/i', $html)) {
-        return true;
-    }
-
-    $text = strip_tags($html);
-    $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
-    $text = str_replace(["\r", "\n", "\t", ' ', '&nbsp;', "\xc2\xa0"], '', $text);
-    return trim($text) !== '';
-}
-
-function html_or_soon(?string $html): string
-{
-    return html_has_visible_content($html) ? (string)$html : coming_soon_block();
+    execute_query(
+        "INSERT INTO user_problem_progress (user_id, problem_id, status, last_opened_at, solved_at)
+         VALUES (?, ?, ?, NOW(), IF(? = 'solved', NOW(), NULL))
+         ON DUPLICATE KEY UPDATE status = VALUES(status), last_opened_at = NOW(), solved_at = IF(VALUES(status) = 'solved', NOW(), solved_at)",
+        [$userId, $problemId, $status, $status]
+    );
 }

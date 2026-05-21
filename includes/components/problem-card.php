@@ -1,74 +1,42 @@
 <?php
-declare(strict_types=1);
-$problem = $problem ?? [];
-$tags = array_filter(explode(',', (string)($problem['tags_csv'] ?? '')));
-$cardId = preg_replace('/[^a-zA-Z0-9_-]/', '-', (string)($problem['problem_code'] ?? $problem['id'] ?? uniqid('p')));
-$levelKey = difficulty_level_key((string)($problem['difficulty'] ?? 'core'));
-$typeKey = problem_type_key($problem);
-$searchText = strtolower(($problem['title'] ?? '') . ' ' . ($problem['problem_code'] ?? '') . ' ' . implode(' ', $tags));
-$primaryTag = $tags ? reset($tags) : '';
-$problemNumber = (string)($problem['book_number'] ?? '');
-if ($problemNumber === '') {
-    $problemNumber = (string)($problem['problem_code'] ?? '');
-}
-$isLoggedIn = !empty($_SESSION['user_id']);
-$isBookmarked = (int)($problem['is_bookmarked'] ?? 0) === 1;
-$isSolved = (string)($problem['progress_status'] ?? '') === 'solved';
+/** @var array $problem */
+require_once __DIR__ . '/../functions.php';
+require_once __DIR__ . '/media-renderer.php';
+$tags = get_problem_tags((int) $problem['id']);
+$mainTag = $tags[0]['title'] ?? '';
+$cardId = 'problem-' . preg_replace('/[^A-Za-z0-9_-]/', '-', $problem['problem_code']);
 ?>
-<article class="card problem-card compact-problem-card shadow-sm mb-3"
-         data-problem-code="<?= h($problem['problem_code'] ?? '') ?>"
-         data-problem-id="<?= h((string)($problem['id'] ?? '')) ?>"
-         data-bookmarked="<?= $isBookmarked ? '1' : '0' ?>"
-         data-solved="<?= $isSolved ? '1' : '0' ?>"
-         data-difficulty="<?= h($levelKey) ?>"
-         data-type="<?= h($typeKey) ?>"
-         data-tags="<?= h(implode(' ', $tags)) ?>"
-         data-search="<?= h($searchText) ?>">
-  <div class="card-body">
-    <div class="problem-title-row">
-      <div class="problem-title-main">
-        <h2 class="problem-heading"><?= h($problem['title'] ?? '') ?></h2>
-        <?php if ($primaryTag !== ''): ?>
-          <span class="badge rounded-pill problem-tag"><?= h(tag_label((string)$primaryTag)) ?></span>
-        <?php endif; ?>
-      </div>
-      <div class="problem-actions-secondary">
-        <button class="problem-icon-btn problem-solved-toggle js-solved" type="button" aria-label="<?= h(t('mark_solved_action')) ?>" title="<?= h(t('mark_solved_action')) ?>" data-default="<?= h(t('mark_solved_action')) ?>" data-active="<?= h(t('solved_action')) ?>" <?= $isLoggedIn ? 'data-api-url="' . h(url('api/problem-progress.php')) . '"' : '' ?>>
-          <span aria-hidden="true"></span>
-        </button>
-        <?php if ($problemNumber !== ''): ?>
-          <span class="problem-number"><?= h($problemNumber) ?></span>
-        <?php endif; ?>
-        <button class="problem-icon-btn problem-bookmark-toggle js-bookmark" type="button" aria-label="<?= h(t('bookmark_action')) ?>" title="<?= h(t('bookmark_action')) ?>" data-default="<?= h(t('bookmark_action')) ?>" data-active="<?= h(t('bookmarked_action')) ?>" <?= $isLoggedIn ? 'data-api-url="' . h(url('api/bookmark.php')) . '"' : '' ?>>
-          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-            <path d="M6 3.75h12a1 1 0 0 1 1 1v15.5l-7-4.1-7 4.1V4.75a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
+<article class="problem-card" data-problem-code="<?= e($problem['problem_code']) ?>" data-problem-id="<?= e((string) $problem['id']) ?>">
+    <div class="problem-meta">
+        <a class="problem-code" href="<?= e(problem_url($problem['problem_code'])) ?>">#<?= e((string) ($problem['book_number'] ?: $problem['problem_code'])) ?></a>
+        <a class="problem-title" href="<?= e(problem_url($problem['problem_code'])) ?>"><?= e($problem['title'] ?? t('missing_translation')) ?></a>
+        <?php if ($mainTag): ?><span class="tag-chip"><?= e($mainTag) ?></span><?php endif; ?>
+        <?= render_stars((int) $problem['difficulty']) ?>
+        <div class="problem-actions">
+            <?php if (!empty($problem['hint_html'])): ?>
+                <button class="icon-btn js-toggle-panel" type="button" data-target="#<?= e($cardId) ?>-hint" aria-label="<?= e(t('hint')) ?>">?</button>
+            <?php endif; ?>
+            <button class="icon-btn js-solved" type="button" aria-label="<?= e(t('mark_solved')) ?>">○</button>
+            <button class="icon-btn js-bookmark" type="button" aria-label="<?= e(t('bookmark')) ?>">☆</button>
+        </div>
     </div>
-    <div class="statement math-content"><?= $problem['statement_html'] ?? '' ?></div>
-    <?php $mediaItems = fetch_problem_media((int)($problem['id'] ?? 0), 'statement'); include __DIR__ . '/media-renderer.php'; ?>
-    <?php if (!empty($problem['solution_html']) || !empty($problem['hint_html'])): ?>
-      <div class="reveal-row">
-        <?php if (!empty($problem['solution_html'])): ?>
-          <details class="reveal-details js-reveal" id="solution-<?= h($cardId) ?>">
-            <summary><?= h(t('solution')) ?></summary>
-            <div class="reveal-content math-content">
-              <?= $problem['solution_html'] ?>
-              <?php $mediaItems = fetch_problem_media((int)($problem['id'] ?? 0), 'solution'); include __DIR__ . '/media-renderer.php'; ?>
-            </div>
-          </details>
-        <?php endif; ?>
-        <?php if (!empty($problem['hint_html'])): ?>
-          <details class="reveal-details js-reveal reveal-details-right" id="hint-<?= h($cardId) ?>">
-            <summary><?= h(t('hint')) ?></summary>
-            <div class="reveal-content math-content">
-              <?= $problem['hint_html'] ?>
-              <?php $mediaItems = fetch_problem_media((int)($problem['id'] ?? 0), 'hint'); include __DIR__ . '/media-renderer.php'; ?>
-            </div>
-          </details>
-        <?php endif; ?>
-      </div>
+    <?php if (!empty($problem['translation_missing'])): ?>
+        <div class="alert alert-warning py-2 small mb-2"><?= e(t('missing_translation_warning')) ?></div>
     <?php endif; ?>
-  </div>
+    <div class="problem-statement"><?= $problem['statement_html'] ?? '' ?></div>
+    <?php render_problem_media((int) $problem['id'], 'statement'); ?>
+    <?php if (!empty($problem['hint_html'])): ?>
+        <div id="<?= e($cardId) ?>-hint" class="soft-panel hint-panel d-none">
+            <div class="fw-semibold mb-1"><?= e(t('hint')) ?></div>
+            <?= $problem['hint_html'] ?>
+            <?php render_problem_media((int) $problem['id'], 'hint'); ?>
+        </div>
+    <?php endif; ?>
+    <?php if (!empty($problem['solution_html'])): ?>
+        <button class="link-button js-toggle-panel mt-2" type="button" data-target="#<?= e($cardId) ?>-solution"><?= e(t('solution')) ?></button>
+        <div id="<?= e($cardId) ?>-solution" class="soft-panel solution-panel d-none">
+            <?= $problem['solution_html'] ?>
+            <?php render_problem_media((int) $problem['id'], 'solution'); ?>
+        </div>
+    <?php endif; ?>
 </article>

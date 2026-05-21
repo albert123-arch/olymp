@@ -1,24 +1,19 @@
 <?php
-declare(strict_types=1);
-$course = $course ?? [];
-$courseSlug = (string)($course['slug'] ?? '');
-if ($courseSlug === '' && db_available()) {
-    $firstCourse = fetch_first_course();
-    $courseSlug = $firstCourse['slug'] ?? '';
-}
-$isActive = ($course['status'] ?? '') === 'active';
+/** @var array $course */
+require_once __DIR__ . '/../functions.php';
+$isReady = ($course['slug'] ?? '') === 'number-theory';
 ?>
-<article class="card course-card h-100 shadow-sm">
-  <div class="card-body d-flex flex-column">
-    <div class="d-flex justify-content-between gap-2 mb-3">
-      <h2 class="h5 mb-0"><?= h($course['title'] ?? '') ?></h2>
-      <span class="badge <?= $isActive ? 'text-bg-success' : 'text-bg-secondary' ?>">
-        <?= h($isActive ? t('active_now') : t('coming_soon')) ?>
-      </span>
+<article class="course-card h-100">
+    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+        <h2 class="h5 mb-0"><?= e($course['title'] ?? t('missing_translation')) ?><?= missing_translation_badge($course) ?></h2>
+        <?php if (!$isReady): ?><span class="badge text-bg-light border"><?= e(t('coming_soon')) ?></span><?php endif; ?>
     </div>
-    <div class="text-secondary flex-grow-1"><?= html_or_soon($course['summary_html'] ?? '') ?></div>
-    <a class="btn <?= $isActive ? 'btn-primary' : 'btn-outline-secondary' ?> mt-3" href="<?= h(course_url($courseSlug)) ?>">
-      <?= h(t('open_course')) ?>
-    </a>
-  </div>
+    <div class="text-muted small mb-3"><?= $course['description_html'] ?? '' ?></div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-sm btn-accent" href="<?= e(course_url($course['slug'])) ?>"><?= e($isReady ? t('start_learning') : t('overview')) ?></a>
+        <?php if ($isReady): ?>
+            <a class="btn btn-sm btn-outline-secondary" href="<?= e(practice_url($course['slug'])) ?>"><?= e(t('start_practice')) ?></a>
+        <?php endif; ?>
+    </div>
 </article>
+

@@ -1,87 +1,43 @@
 <?php
-declare(strict_types=1);
 require_once __DIR__ . '/includes/functions.php';
-$slug = (string)($_GET['course'] ?? '');
-if (db_available() && $slug === '') {
-    $firstCourse = fetch_first_course();
-    if ($firstCourse) {
-        $slug = $firstCourse['slug'];
-    }
+$slug = $_GET['course'] ?? 'number-theory';
+$course = has_real_config() ? get_course_by_slug((string) $slug) : null;
+if (!$course) {
+    http_response_code(has_real_config() ? 404 : 200);
+    $course = ['id' => 0, 'slug' => (string) $slug, 'title' => t('courses'), 'description_html' => ''];
 }
-$course = db_available() && $slug !== '' ? fetch_course($slug) : null;
-$courseTabs = ['overview', 'chapters', 'practice', 'worksheets'];
-if (user_can_manage_content()) {
-    $courseTabs[] = 'teacher_guide';
-}
-$pageTitle = ($course['title'] ?? t('courses')) . ' | ' . t('site_title');
+$chapters = has_real_config() ? get_chapters_for_course((int) $course['id']) : [];
+$pageTitle = $course['title'] ?? t('courses');
 include __DIR__ . '/includes/layout/header.php';
 ?>
-<?php if (!$course): ?>
-  <?php render_db_notice(); ?>
-<?php else: ?>
-  <div class="mb-4">
-    <a href="<?= h(url('index.php')) ?>" class="link-secondary"><?= h(t('back')) ?></a>
-    <h1 class="fw-bold mt-2"><?= h($course['title']) ?></h1>
-    <div class="lead text-secondary"><?= html_or_soon($course['summary_html'] ?? '') ?></div>
-  </div>
-  <ul class="nav nav-tabs hash-tab-nav" role="tablist">
-    <?php foreach ($courseTabs as $i => $key): ?>
-      <li class="nav-item" role="presentation">
-        <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" href="#<?= h($key) ?>" role="tab" aria-controls="<?= h($key) ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>"><?= h(t($key)) ?></a>
-      </li>
-    <?php endforeach; ?>
-  </ul>
-  <div class="tab-content hash-tab-content border border-top-0 p-3 p-lg-4 bg-white">
-    <section class="tab-pane active" id="overview"><?= html_or_soon($course['overview_html'] ?? '') ?></section>
-    <section class="tab-pane" id="chapters">
-      <?php $chapters = fetch_chapters((int)$course['id']); ?>
-      <?php if (!$chapters): ?>
-        <?= coming_soon_block() ?>
-      <?php endif; ?>
-      <div class="row g-3">
-        <?php foreach ($chapters as $chapter): ?>
-          <?php $chapter['course_slug'] = $course['slug']; ?>
-          <div class="col-lg-6"><?php include __DIR__ . '/includes/components/chapter-card.php'; ?></div>
-        <?php endforeach; ?>
-      </div>
+<div class="mb-4">
+    <a class="small text-decoration-none" href="<?= e(url('index.php')) ?>">&larr; <?= e(t('home')) ?></a>
+    <h1 class="mt-2"><?= e($course['title'] ?? t('missing_translation')) ?><?= missing_translation_badge($course) ?></h1>
+    <div class="text-muted math-content"><?= $course['description_html'] ?? '' ?></div>
+</div>
+
+<ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview" type="button"><?= e(t('overview')) ?></button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#chapters" type="button"><?= e(t('chapters')) ?></button></li>
+    <li class="nav-item"><a class="nav-link" href="<?= e(practice_url($course['slug'])) ?>"><?= e(t('practice')) ?></a></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#worksheets" type="button"><?= e(t('worksheets')) ?></button></li>
+    <?php if (is_teacher()): ?><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#teacher" type="button"><?= e(t('teacher_notes')) ?></button></li><?php endif; ?>
+</ul>
+
+<div class="tab-content">
+    <section class="tab-pane fade show active" id="overview">
+        <div class="admin-panel p-3 math-content"><?= $course['description_html'] ?: e(t('coming_soon')) ?></div>
     </section>
-    <section class="tab-pane" id="practice">
-      <p><a class="btn btn-outline-primary" href="<?= h(practice_url((string)$course['slug'])) ?>"><?= h(t('practice')) ?></a></p>
-      <?php $problems = fetch_problems(null, (int)$course['id']); ?>
-      <?php if (!$problems): ?>
-        <?= coming_soon_block() ?>
-      <?php endif; ?>
-      <?php foreach ($problems as $problem): ?>
-        <?php include __DIR__ . '/includes/components/problem-card.php'; ?>
-      <?php endforeach; ?>
+    <section class="tab-pane fade" id="chapters">
+        <div class="vstack gap-3">
+            <?php foreach ($chapters as $chapter): include __DIR__ . '/includes/components/chapter-card.php'; endforeach; ?>
+            <?php if (!$chapters): ?><div class="alert alert-info"><?= e(t('no_items')) ?></div><?php endif; ?>
+        </div>
     </section>
-    <section class="tab-pane" id="worksheets"><?= coming_soon_block() ?></section>
-    <?php if (user_can_manage_content()): ?>
-      <section class="tab-pane" id="teacher_guide"><?= html_or_soon($course['teacher_guide_html'] ?? '') ?></section>
-    <?php endif; ?>
-  </div>
-  <script>
-    (function () {
-      function openHashTab() {
-        var hash = window.location.hash;
-        if (!hash) return;
-        var pane = document.querySelector(hash + '.tab-pane');
-        var link = document.querySelector('.hash-tab-nav [href="' + hash + '"]');
-        if (!pane || !link) return;
-        document.querySelectorAll('.hash-tab-content > .tab-pane').forEach(function (el) {
-          el.classList.remove('active');
-        });
-        document.querySelectorAll('.hash-tab-nav .nav-link').forEach(function (el) {
-          el.classList.remove('active');
-          el.setAttribute('aria-selected', 'false');
-        });
-        pane.classList.add('active');
-        link.classList.add('active');
-        link.setAttribute('aria-selected', 'true');
-      }
-      window.addEventListener('hashchange', openHashTab);
-      openHashTab();
-    })();
-  </script>
-<?php endif; ?>
+    <section class="tab-pane fade" id="worksheets">
+        <div class="admin-panel p-3"><?= e(t('coming_soon')) ?></div>
+    </section>
+    <?php if (is_teacher()): ?><section class="tab-pane fade" id="teacher"><div class="admin-panel p-3"><?= e(t('teacher_only')) ?></div></section><?php endif; ?>
+</div>
 <?php include __DIR__ . '/includes/layout/footer.php'; ?>
+

@@ -1,12 +1,11 @@
-<?php declare(strict_types=1); ?>
+<?php require_once __DIR__ . '/../functions.php'; ?>
+</div>
 </main>
-<footer class="border-top bg-white py-4">
-  <div class="container d-flex flex-wrap justify-content-between gap-2 text-secondary small">
-    <span><?= h(t('site_title')) ?></span>
-    <span>PHP / MySQL / Bootstrap</span>
-  </div>
+<footer class="border-top py-4 text-center text-muted small">
+    <div class="container">Olympiad Math · <?= e(t('number_theory')) ?> · MathJax</div>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="<?= h(asset_url('assets/app.js')) ?>?v=5"></script>
+<script src="<?= e(url('assets/js/app.js', [])) ?>"></script>
 </body>
 </html>
+

@@ -1,21 +1,17 @@
 <?php
-declare(strict_types=1);
-$chapter = $chapter ?? [];
-$courseSlug = (string)($chapter['course_slug'] ?? ($_GET['course'] ?? ''));
-if ($courseSlug === '' && db_available()) {
-    $courseSlug = fetch_first_course_slug() ?? '';
-}
-$chapterSlug = (string)($chapter['slug'] ?? '');
+/** @var array $chapter */
+/** @var array $course */
+require_once __DIR__ . '/../functions.php';
 ?>
-<article class="card chapter-card h-100 shadow-sm">
-  <div class="card-body">
-    <div class="d-flex justify-content-between gap-2 mb-2">
-      <h2 class="h5 mb-0"><?= h($chapter['sort_order'] ?? '') ?>. <?= h($chapter['title'] ?? '') ?></h2>
-      <span class="badge text-bg-light border"><?= h(t('chapters')) ?></span>
+<article class="chapter-card">
+    <div>
+        <div class="small text-muted">#<?= e((string) ($chapter['sort_order'] ?? '')) ?></div>
+        <h3 class="h6 mb-1"><?= e($chapter['title'] ?? t('missing_translation')) ?><?= missing_translation_badge($chapter) ?></h3>
+        <div class="text-muted small"><?= $chapter['description_html'] ?? '' ?></div>
     </div>
-    <div class="text-secondary mb-3"><?= html_or_soon($chapter['summary_html'] ?? '') ?></div>
-    <a class="btn btn-outline-primary" href="<?= h(chapter_url($courseSlug, $chapterSlug)) ?>">
-      <?= h(t('open_chapter')) ?>
-    </a>
-  </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-sm btn-outline-secondary" href="<?= e(chapter_url($course['slug'], $chapter['slug'])) ?>"><?= e(t('theory')) ?></a>
+        <a class="btn btn-sm btn-accent" href="<?= e(practice_url($course['slug'], $chapter['slug'])) ?>"><?= e(t('practice')) ?></a>
+    </div>
 </article>
+

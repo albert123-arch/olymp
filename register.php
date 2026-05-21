@@ -1,46 +1,27 @@
 <?php
-declare(strict_types=1);
 require_once __DIR__ . '/includes/functions.php';
-
-$error = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    [$ok, $message] = register_user(
-        (string)($_POST['name'] ?? ''),
-        (string)($_POST['email'] ?? ''),
-        (string)($_POST['password'] ?? '')
+require_once __DIR__ . '/includes/csrf.php';
+$message = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && has_real_config()) {
+    verify_csrf();
+    execute_query(
+        'INSERT INTO users (name, email, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, "student", NOW(), NOW())',
+        [(string) $_POST['name'], (string) $_POST['email'], password_hash((string) $_POST['password'], PASSWORD_DEFAULT)]
     );
-    if ($ok) {
-        header('Location: ' . url('index.php'));
-        exit;
-    }
-    $error = $message;
+    $message = t('account_created');
 }
-
-$pageTitle = t('register_title') . ' | ' . t('site_title');
+$pageTitle = t('register');
 include __DIR__ . '/includes/layout/header.php';
 ?>
-<section class="auth-shell mx-auto">
-  <div class="card shadow-sm">
-    <div class="card-body p-4">
-      <h1 class="h3 fw-bold mb-3"><?= h(t('register_title')) ?></h1>
-      <?php if ($error): ?><div class="alert alert-danger"><?= h($error) ?></div><?php endif; ?>
-      <form method="post" class="vstack gap-3">
-        <div>
-          <label class="form-label"><?= h(t('name')) ?></label>
-          <input class="form-control" type="text" name="name" autocomplete="name" required>
-        </div>
-        <div>
-          <label class="form-label"><?= h(t('email')) ?></label>
-          <input class="form-control" type="email" name="email" autocomplete="email" required>
-        </div>
-        <div>
-          <label class="form-label"><?= h(t('password')) ?></label>
-          <input class="form-control" type="password" name="password" autocomplete="new-password" minlength="8" required>
-        </div>
-        <button class="btn btn-primary" type="submit"><?= h(t('register')) ?></button>
-      </form>
-      <p class="mb-0 mt-3"><a href="<?= h(url('login.php')) ?>"><?= h(t('login')) ?></a></p>
-    </div>
-  </div>
-</section>
+<div class="row justify-content-center"><div class="col-md-6">
+<form class="admin-panel p-4" method="post">
+    <?= csrf_field() ?>
+    <h1 class="h4 mb-3"><?= e(t('register')) ?></h1>
+    <?php if ($message): ?><div class="alert alert-success"><?= e($message) ?></div><?php endif; ?>
+    <label class="form-label w-100"><?= e(t('name')) ?><input class="form-control" name="name" required></label>
+    <label class="form-label w-100"><?= e(t('email')) ?><input class="form-control" type="email" name="email" required></label>
+    <label class="form-label w-100"><?= e(t('password')) ?><input class="form-control" type="password" name="password" required></label>
+    <button class="btn btn-accent" type="submit"><?= e(t('create_account')) ?></button>
+</form>
+</div></div>
 <?php include __DIR__ . '/includes/layout/footer.php'; ?>
