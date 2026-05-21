@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/lang.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/icons.php';
 
 function e($value)
 {

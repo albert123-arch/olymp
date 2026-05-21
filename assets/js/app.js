@@ -22,6 +22,19 @@
         return 'olymp_' + kind + '_' + code;
     }
 
+    const svgIcons = {
+        bookmark: '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18l-6-3-6 3z"/></svg>',
+        'bookmark-fill': '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path fill="currentColor" d="M6 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18l-6-3-6 3z"/></svg>',
+        circle: '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>',
+        'check-circle': '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>'
+    };
+
+    function setButtonIcon(button, name) {
+        if (button && svgIcons[name]) {
+            button.innerHTML = svgIcons[name];
+        }
+    }
+
     document.querySelectorAll('.problem-card').forEach(function (card) {
         const code = card.dataset.problemCode;
         const problemId = card.dataset.problemId;
@@ -30,18 +43,18 @@
         localStorage.setItem('olymp_last_problem', code);
 
         if (bookmark && localStorage.getItem(key('bookmark', code)) === '1') {
-            bookmark.textContent = '★';
+            setButtonIcon(bookmark, bookmark.dataset.iconOn);
             bookmark.classList.add('active');
         }
         if (solved && localStorage.getItem(key('solved', code)) === '1') {
-            solved.textContent = '✓';
+            setButtonIcon(solved, solved.dataset.iconOn);
             solved.classList.add('active');
         }
 
         if (bookmark) {
             bookmark.addEventListener('click', function () {
                 const active = bookmark.classList.toggle('active');
-                bookmark.textContent = active ? '★' : '☆';
+                setButtonIcon(bookmark, active ? bookmark.dataset.iconOn : bookmark.dataset.iconOff);
                 localStorage.setItem(key('bookmark', code), active ? '1' : '0');
                 saveProgress(problemId, 'bookmark', active ? '1' : '0');
             });
@@ -50,7 +63,7 @@
         if (solved) {
             solved.addEventListener('click', function () {
                 const active = solved.classList.toggle('active');
-                solved.textContent = active ? '✓' : '○';
+                setButtonIcon(solved, active ? solved.dataset.iconOn : solved.dataset.iconOff);
                 localStorage.setItem(key('solved', code), active ? '1' : '0');
                 saveProgress(problemId, 'solved', active ? '1' : '0');
             });

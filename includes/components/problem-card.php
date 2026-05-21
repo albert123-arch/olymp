@@ -14,10 +14,10 @@ $cardId = 'problem-' . preg_replace('/[^A-Za-z0-9_-]/', '-', $problem['problem_c
         <?= render_stars($problem['difficulty']) ?>
         <div class="problem-actions">
             <?php if (!empty($problem['hint_html'])): ?>
-                <button class="icon-btn js-toggle-panel" type="button" data-target="#<?= e($cardId) ?>-hint" aria-label="<?= e(t('hint')) ?>">?</button>
+                <button class="icon-btn js-toggle-panel" type="button" data-target="#<?= e($cardId) ?>-hint" aria-label="<?= e(t('hint')) ?>"><?= icon('help') ?></button>
             <?php endif; ?>
-            <button class="icon-btn js-solved" type="button" aria-label="<?= e(t('mark_solved')) ?>">○</button>
-            <button class="icon-btn js-bookmark" type="button" aria-label="<?= e(t('bookmark')) ?>">☆</button>
+            <button class="icon-btn js-solved" type="button" aria-label="<?= e(t('mark_solved')) ?>" data-icon-off="circle" data-icon-on="check-circle"><?= icon('circle') ?></button>
+            <button class="icon-btn js-bookmark" type="button" aria-label="<?= e(t('bookmark')) ?>" data-icon-off="bookmark" data-icon-on="bookmark-fill"><?= icon('bookmark') ?></button>
         </div>
     </div>
     <?php if (!empty($problem['translation_missing'])): ?>
@@ -33,7 +33,7 @@ $cardId = 'problem-' . preg_replace('/[^A-Za-z0-9_-]/', '-', $problem['problem_c
         </div>
     <?php endif; ?>
     <?php if (!empty($problem['solution_html'])): ?>
-        <button class="link-button js-toggle-panel mt-2" type="button" data-target="#<?= e($cardId) ?>-solution"><?= e(t('solution')) ?></button>
+        <button class="link-button js-toggle-panel mt-2" type="button" data-target="#<?= e($cardId) ?>-solution"><?= icon('solution') ?> <?= e(t('solution')) ?></button>
         <div id="<?= e($cardId) ?>-solution" class="soft-panel solution-panel d-none">
             <?= $problem['solution_html'] ?>
             <?php render_problem_media((int) $problem['id'], 'solution'); ?>

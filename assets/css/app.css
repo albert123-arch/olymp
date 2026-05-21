@@ -114,6 +114,26 @@ body {
     font-weight: 700;
 }
 
+.svg-icon {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    vertical-align: -.14em;
+    flex: 0 0 auto;
+}
+
+.icon-btn .svg-icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+.nav-link .svg-icon,
+.btn .svg-icon,
+.navbar-brand .svg-icon,
+.admin-sidebar .svg-icon {
+    margin-right: .25rem;
+}
+
 .link-button {
     border: 0;
     background: transparent;
@@ -180,4 +200,3 @@ body {
         grid-template-columns: 1fr;
     }
 }
-
