@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../functions.php';
-function render_problem_media(int $problemId, string $role): void
+function render_problem_media($problemId, $role)
 {
     if (!has_real_config()) {
         return;

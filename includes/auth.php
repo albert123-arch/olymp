@@ -1,13 +1,11 @@
 <?php
-declare(strict_types=1);
-
 require_once __DIR__ . '/db.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-function current_user(): ?array
+function current_user()
 {
     if (empty($_SESSION['user_id']) || !has_real_config()) {
         return null;
@@ -19,24 +17,24 @@ function current_user(): ?array
     }
 }
 
-function is_logged_in(): bool
+function is_logged_in()
 {
     return current_user() !== null;
 }
 
-function is_teacher(): bool
+function is_teacher()
 {
     $user = current_user();
     return $user && in_array($user['role'], ['teacher', 'admin'], true);
 }
 
-function is_admin(): bool
+function is_admin()
 {
     $user = current_user();
     return $user && $user['role'] === 'admin';
 }
 
-function require_login(): void
+function require_login()
 {
     if (!is_logged_in()) {
         header('Location: ' . url('login.php'));
@@ -44,7 +42,7 @@ function require_login(): void
     }
 }
 
-function require_admin(): void
+function require_admin()
 {
     if (!is_admin()) {
         http_response_code(403);
@@ -52,7 +50,7 @@ function require_admin(): void
     }
 }
 
-function login_user(string $email, string $password): bool
+function login_user($email, $password)
 {
     $user = fetch_one('SELECT * FROM users WHERE email = ?', [$email]);
     if (!$user || !password_verify($password, $user['password_hash'])) {

@@ -1,7 +1,5 @@
 <?php
-declare(strict_types=1);
-
-function app_config(): array
+function app_config()
 {
     static $config = null;
     if ($config !== null) {
@@ -31,12 +29,12 @@ function app_config(): array
     return $config;
 }
 
-function has_real_config(): bool
+function has_real_config()
 {
     return file_exists(__DIR__ . '/config.php') || file_exists(dirname(__DIR__) . '/config.php');
 }
 
-function db(): PDO
+function db()
 {
     static $pdo = null;
     if ($pdo instanceof PDO) {
@@ -60,14 +58,14 @@ function db(): PDO
     return $pdo;
 }
 
-function fetch_all(string $sql, array $params = []): array
+function fetch_all($sql, $params = [])
 {
     $stmt = db()->prepare($sql);
     $stmt->execute($params);
     return $stmt->fetchAll();
 }
 
-function fetch_one(string $sql, array $params = []): ?array
+function fetch_one($sql, $params = [])
 {
     $stmt = db()->prepare($sql);
     $stmt->execute($params);
@@ -75,13 +73,13 @@ function fetch_one(string $sql, array $params = []): ?array
     return $row ?: null;
 }
 
-function execute_query(string $sql, array $params = []): bool
+function execute_query($sql, $params = [])
 {
     $stmt = db()->prepare($sql);
     return $stmt->execute($params);
 }
 
-function table_exists(string $table): bool
+function table_exists($table)
 {
     static $cache = [];
     if (isset($cache[$table])) {
@@ -97,7 +95,7 @@ function table_exists(string $table): bool
     return $cache[$table];
 }
 
-function column_exists(string $table, string $column): bool
+function column_exists($table, $column)
 {
     static $cache = [];
     $key = $table . '.' . $column;
@@ -114,7 +112,7 @@ function column_exists(string $table, string $column): bool
     return $cache[$key];
 }
 
-function column_type(string $table, string $column): ?string
+function column_type($table, $column)
 {
     static $cache = [];
     $key = $table . '.' . $column;

@@ -1,37 +1,35 @@
 <?php
-declare(strict_types=1);
-
 require_once __DIR__ . '/lang.php';
 require_once __DIR__ . '/auth.php';
 
-function e(?string $value): string
+function e($value)
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
-function base_path(): string
+function base_path()
 {
     $base = app_config()['app']['base_url'] ?? '';
     return rtrim((string) $base, '/');
 }
 
-function url(string $path, array $params = []): string
+function url($path, $params = [])
 {
     $params = array_merge(['lang' => current_lang()], $params);
     return base_path() . '/' . ltrim($path, '/') . ($params ? '?' . http_build_query($params) : '');
 }
 
-function course_url(string $courseSlug): string
+function course_url($courseSlug)
 {
     return url('course.php', ['course' => $courseSlug]);
 }
 
-function chapter_url(string $courseSlug, string $chapterSlug): string
+function chapter_url($courseSlug, $chapterSlug)
 {
     return url('chapter.php', ['course' => $courseSlug, 'chapter' => $chapterSlug]);
 }
 
-function practice_url(string $courseSlug, ?string $chapterSlug = null): string
+function practice_url($courseSlug, $chapterSlug = null)
 {
     $params = ['course' => $courseSlug];
     if ($chapterSlug !== null) {
@@ -40,24 +38,24 @@ function practice_url(string $courseSlug, ?string $chapterSlug = null): string
     return url('practice.php', $params);
 }
 
-function problem_url(string $problemCode): string
+function problem_url($problemCode)
 {
     return url('problem.php', ['code' => $problemCode]);
 }
 
-function setup_guard(): void
+function setup_guard()
 {
     if (!has_real_config()) {
         echo '<div class="alert alert-warning my-4">' . e(t('setup_required')) . '</div>';
     }
 }
 
-function localized_select(string $baseTable, string $textTable, string $joinKey, string $alias = 't'): string
+function localized_select($baseTable, $textTable, $joinKey, $alias = 't')
 {
     return "LEFT JOIN {$textTable} {$alias} ON {$alias}.{$joinKey} = {$baseTable}.id AND {$alias}.lang = :lang";
 }
 
-function missing_translation_badge(?array $row): string
+function missing_translation_badge($row)
 {
     if ($row && !empty($row['translation_missing'])) {
         return '<span class="badge text-bg-warning ms-2">' . e(t('missing_translation')) . '</span>';
@@ -65,48 +63,58 @@ function missing_translation_badge(?array $row): string
     return '';
 }
 
-function get_courses(bool $publishedOnly = true): array
+function get_courses($publishedOnly = true)
 {
     if (!has_real_config()) {
         return [];
     }
-    $where = $publishedOnly ? 'WHERE c.is_published = 1' : '';
-    $descriptionExpr = column_exists('course_texts', 'description_html')
-        ? 'ct.description_html'
-        : (column_exists('course_texts', 'overview_html')
-            ? 'COALESCE(ct.overview_html, ct.summary_html)'
-            : 'ct.summary_html');
-    $missingExpr = column_exists('course_texts', 'id') ? 'ct.id IS NULL' : 'ct.course_id IS NULL';
-    return fetch_all(
-        "SELECT c.*, ct.title, {$descriptionExpr} AS description_html,
-                CASE WHEN {$missingExpr} THEN 1 ELSE 0 END AS translation_missing
-         FROM courses c
-         LEFT JOIN course_texts ct ON ct.course_id = c.id AND ct.lang = :lang
-         {$where}
-         ORDER BY c.sort_order, c.id",
-        ['lang' => current_lang()]
-    );
+    try {
+        $where = $publishedOnly ? 'WHERE c.is_published = 1' : '';
+        $descriptionExpr = column_exists('course_texts', 'description_html')
+            ? 'ct.description_html'
+            : (column_exists('course_texts', 'overview_html')
+                ? 'COALESCE(ct.overview_html, ct.summary_html)'
+                : 'ct.summary_html');
+        $missingExpr = column_exists('course_texts', 'id') ? 'ct.id IS NULL' : 'ct.course_id IS NULL';
+        return fetch_all(
+            "SELECT c.*, ct.title, {$descriptionExpr} AS description_html,
+                    CASE WHEN {$missingExpr} THEN 1 ELSE 0 END AS translation_missing
+             FROM courses c
+             LEFT JOIN course_texts ct ON ct.course_id = c.id AND ct.lang = :lang
+             {$where}
+             ORDER BY c.sort_order, c.id",
+            ['lang' => current_lang()]
+        );
+    } catch (Throwable $e) {
+        $GLOBALS['APP_DB_ERROR'] = $e->getMessage();
+        return [];
+    }
 }
 
-function get_course_by_slug(string $slug): ?array
+function get_course_by_slug($slug)
 {
-    $descriptionExpr = column_exists('course_texts', 'description_html')
-        ? 'ct.description_html'
-        : (column_exists('course_texts', 'overview_html')
-            ? 'COALESCE(ct.overview_html, ct.summary_html)'
-            : 'ct.summary_html');
-    $missingExpr = column_exists('course_texts', 'id') ? 'ct.id IS NULL' : 'ct.course_id IS NULL';
-    return fetch_one(
-        "SELECT c.*, ct.title, {$descriptionExpr} AS description_html,
-                CASE WHEN {$missingExpr} THEN 1 ELSE 0 END AS translation_missing
-         FROM courses c
-         LEFT JOIN course_texts ct ON ct.course_id = c.id AND ct.lang = :lang
-         WHERE c.slug = :slug",
-        ['lang' => current_lang(), 'slug' => $slug]
-    );
+    try {
+        $descriptionExpr = column_exists('course_texts', 'description_html')
+            ? 'ct.description_html'
+            : (column_exists('course_texts', 'overview_html')
+                ? 'COALESCE(ct.overview_html, ct.summary_html)'
+                : 'ct.summary_html');
+        $missingExpr = column_exists('course_texts', 'id') ? 'ct.id IS NULL' : 'ct.course_id IS NULL';
+        return fetch_one(
+            "SELECT c.*, ct.title, {$descriptionExpr} AS description_html,
+                    CASE WHEN {$missingExpr} THEN 1 ELSE 0 END AS translation_missing
+             FROM courses c
+             LEFT JOIN course_texts ct ON ct.course_id = c.id AND ct.lang = :lang
+             WHERE c.slug = :slug",
+            ['lang' => current_lang(), 'slug' => $slug]
+        );
+    } catch (Throwable $e) {
+        $GLOBALS['APP_DB_ERROR'] = $e->getMessage();
+        return null;
+    }
 }
 
-function get_chapters_for_course(int $courseId, bool $publishedOnly = true): array
+function get_chapters_for_course($courseId, $publishedOnly = true)
 {
     $where = $publishedOnly ? 'AND ch.is_published = 1' : '';
     $descriptionExpr = column_exists('chapter_texts', 'description_html') ? 'txt.description_html' : 'txt.summary_html';
@@ -122,7 +130,7 @@ function get_chapters_for_course(int $courseId, bool $publishedOnly = true): arr
     );
 }
 
-function get_chapter_by_slug(int $courseId, string $slug): ?array
+function get_chapter_by_slug($courseId, $slug)
 {
     $descriptionExpr = column_exists('chapter_texts', 'description_html') ? 'txt.description_html' : 'txt.summary_html';
     $missingExpr = column_exists('chapter_texts', 'id') ? 'txt.id IS NULL' : 'txt.chapter_id IS NULL';
@@ -136,7 +144,7 @@ function get_chapter_by_slug(int $courseId, string $slug): ?array
     );
 }
 
-function get_problem_tags(int $problemId): array
+function get_problem_tags($problemId)
 {
     if (!table_exists('tag_texts')) {
         return fetch_all(
@@ -159,7 +167,7 @@ function get_problem_tags(int $problemId): array
     );
 }
 
-function get_problems(array $filters = []): array
+function get_problems($filters = [])
 {
     $where = ['p.is_published = 1'];
     $params = ['lang' => current_lang()];
@@ -187,7 +195,7 @@ function get_problems(array $filters = []): array
     );
 }
 
-function get_problem_by_code(string $code): ?array
+function get_problem_by_code($code)
 {
     $missingExpr = column_exists('problem_texts', 'id') ? 'pt.id IS NULL' : 'pt.problem_id IS NULL';
     return fetch_one(
@@ -203,7 +211,7 @@ function get_problem_by_code(string $code): ?array
     );
 }
 
-function render_stars($difficulty): string
+function render_stars($difficulty)
 {
     if (is_string($difficulty)) {
         $difficulty = ['intro' => 1, 'core' => 2, 'challenge' => 3][$difficulty] ?? (int) $difficulty;
@@ -214,7 +222,7 @@ function render_stars($difficulty): string
         '</span>';
 }
 
-function save_bookmark(int $userId, int $problemId, bool $enabled): void
+function save_bookmark($userId, $problemId, $enabled)
 {
     if ($enabled) {
         execute_query(
@@ -226,7 +234,7 @@ function save_bookmark(int $userId, int $problemId, bool $enabled): void
     execute_query('DELETE FROM bookmarks WHERE user_id = ? AND problem_id = ?', [$userId, $problemId]);
 }
 
-function save_problem_progress(int $userId, int $problemId, string $status): void
+function save_problem_progress($userId, $problemId, $status)
 {
     $allowed = ['not_started', 'viewed', 'solved', 'needs_review'];
     if (!in_array($status, $allowed, true)) {

@@ -1,6 +1,4 @@
 <?php
-declare(strict_types=1);
-
 require_once __DIR__ . '/db.php';
 
 const DEFAULT_LANG = 'ru';
@@ -202,26 +200,26 @@ $GLOBALS['TRANSLATIONS'] = [
     ],
 ];
 
-function supported_lang_codes(): array
+function supported_lang_codes()
 {
     return array_keys($GLOBALS['TRANSLATIONS']);
 }
 
-function current_lang(): string
+function current_lang()
 {
     $lang = $_GET['lang'] ?? $_COOKIE['lang'] ?? DEFAULT_LANG;
     $lang = preg_replace('/[^a-zA-Z0-9_-]/', '', (string) $lang);
     return in_array($lang, supported_lang_codes(), true) ? $lang : DEFAULT_LANG;
 }
 
-function t(string $key): string
+function t($key)
 {
     $lang = current_lang();
     $dict = $GLOBALS['TRANSLATIONS'];
     return $dict[$lang][$key] ?? $dict[DEFAULT_LANG][$key] ?? ('[' . $key . ']');
 }
 
-function lang_url(string $lang): string
+function lang_url($lang)
 {
     $params = $_GET;
     $params['lang'] = $lang;
@@ -229,7 +227,7 @@ function lang_url(string $lang): string
     return $path . '?' . http_build_query($params);
 }
 
-function get_available_languages(): array
+function get_available_languages()
 {
     if (has_real_config()) {
         try {

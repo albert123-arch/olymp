@@ -33,10 +33,17 @@ $courses = has_real_config() ? get_courses(true) : [];
         <?php foreach ($courses as $course): ?>
             <div class="col-md-6 col-xl-4"><?php include __DIR__ . '/includes/components/course-card.php'; ?></div>
         <?php endforeach; ?>
+        <?php if (!empty($GLOBALS['APP_DB_ERROR'])): ?>
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <?= e(current_lang() === 'ru' ? 'Ошибка базы данных. Проверьте имя базы, пользователя, пароль и импорт схемы.' : 'Database error. Check database name, user, password, and schema import.') ?>
+                    <div class="small mt-2"><?= e($GLOBALS['APP_DB_ERROR']) ?></div>
+                </div>
+            </div>
+        <?php endif; ?>
         <?php if (!$courses): ?>
             <div class="col-12"><div class="alert alert-info"><?= e(t('no_items')) ?></div></div>
         <?php endif; ?>
     </div>
 </section>
 <?php include __DIR__ . '/includes/layout/footer.php'; ?>
-
