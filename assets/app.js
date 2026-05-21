@@ -116,7 +116,7 @@
     if (!target) return;
 
     document.querySelectorAll('.nav-tabs .nav-link.active').forEach((el) => el.classList.remove('active'));
-    document.querySelectorAll('.tab-content .tab-pane.active.show').forEach((el) => el.classList.remove('active', 'show'));
+    document.querySelectorAll('.tab-content .tab-pane').forEach((el) => el.classList.remove('active', 'show'));
     trigger.classList.add('active');
     trigger.setAttribute('aria-selected', 'true');
     document.querySelectorAll('.nav-tabs .nav-link').forEach((el) => {
@@ -126,15 +126,6 @@
   }
 
   function showTab(trigger) {
-    try {
-      const tab = bootstrap?.Tab?.getOrCreateInstance(trigger);
-      if (tab && typeof tab.show === 'function') {
-        tab.show();
-        return;
-      }
-    } catch (error) {
-      // ignore and fallback to manual activation
-    }
     setActiveTab(trigger);
   }
 
@@ -159,7 +150,7 @@
   });
 
   function activateTabFromHash() {
-    const hash = window.location.hash;
+    const hash = decodeURIComponent(window.location.hash);
     if (!hash) return;
     const trigger = findTabTrigger(hash);
     if (!trigger) return;
@@ -167,5 +158,5 @@
   }
 
   window.addEventListener('hashchange', activateTabFromHash);
-  activateTabFromHash();
+  window.setTimeout(activateTabFromHash, 0);
 })();
