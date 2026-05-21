@@ -3,7 +3,7 @@ require_once __DIR__ . '/_bootstrap.php';
 $id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
 $error = '';
 $hasProblemType = column_exists('problems', 'problem_type');
-$difficultyIsEnum = str_starts_with((string) column_type('problems', 'difficulty'), 'enum');
+$difficultyIsEnum = strpos((string) column_type('problems', 'difficulty'), 'enum') === 0;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     try {

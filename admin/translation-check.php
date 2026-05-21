@@ -25,7 +25,9 @@ foreach (get_available_languages() as $language) {
         [$code, $code]
     ));
 }
-usort($missing, fn($a, $b) => [$a['entity'], $a['code'], $a['lang']] <=> [$b['entity'], $b['code'], $b['lang']]);
+usort($missing, function (array $a, array $b): int {
+    return strcmp($a['entity'] . $a['code'] . $a['lang'], $b['entity'] . $b['code'] . $b['lang']);
+});
 admin_header(t('translation_check'));
 ?>
 <h1 class="h3"><?= e(t('translation_check')) ?></h1>

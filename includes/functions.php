@@ -210,7 +210,7 @@ function render_stars($difficulty): string
     }
     $difficulty = max(1, min(3, (int) $difficulty));
     return '<span class="stars" aria-label="' . e(t('level') . ' ' . $difficulty . ' ' . t('out_of_3')) . '">' .
-        str_repeat('★', $difficulty) . str_repeat('☆', 3 - $difficulty) .
+        str_repeat('&#9733;', $difficulty) . str_repeat('&#9734;', 3 - $difficulty) .
         '</span>';
 }
 
@@ -233,7 +233,7 @@ function save_problem_progress(int $userId, int $problemId, string $status): voi
         return;
     }
     $statusType = (string) column_type('user_problem_progress', 'status');
-    if (str_contains($statusType, "'unseen'")) {
+    if (strpos($statusType, "'unseen'") !== false) {
         $legacyStatus = ['not_started' => 'unseen', 'viewed' => 'started', 'solved' => 'solved', 'needs_review' => 'review'][$status];
         execute_query(
             "INSERT INTO user_problem_progress (user_id, problem_id, status, attempts, started_at, solved_at)

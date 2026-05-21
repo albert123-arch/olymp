@@ -18,7 +18,7 @@ function render_problem_media(int $problemId, string $role): void
     $captionExpr = table_exists('problem_media_texts') ? 'pmt.caption_html' : 'NULL';
     $altExpr = table_exists('problem_media_texts') ? 'pmt.alt_text' : 'NULL';
     $params = ['problem_id' => $problemId, 'role' => $role];
-    if (str_contains($captionJoin . $langFilter, ':lang')) {
+    if (strpos($captionJoin . $langFilter, ':lang') !== false) {
         $params['lang'] = current_lang();
     }
     $items = fetch_all(

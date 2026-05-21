@@ -19,7 +19,7 @@ if (!is_array($items)) {
 
 foreach ($items as $item) {
     $difficulty = $item['difficulty'] ?? 1;
-    if (str_starts_with((string) column_type('problems', 'difficulty'), 'enum') && is_numeric($difficulty)) {
+    if (strpos((string) column_type('problems', 'difficulty'), 'enum') === 0 && is_numeric($difficulty)) {
         $difficulty = [1 => 'intro', 2 => 'core', 3 => 'challenge'][(int) $difficulty] ?? 'core';
     }
     if (column_exists('problems', 'problem_type')) {
