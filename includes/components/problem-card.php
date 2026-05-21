@@ -11,7 +11,7 @@ $cardId = 'problem-' . preg_replace('/[^A-Za-z0-9_-]/', '-', $problem['problem_c
         <a class="problem-code" href="<?= e(problem_url($problem['problem_code'])) ?>">#<?= e((string) ($problem['book_number'] ?: $problem['problem_code'])) ?></a>
         <a class="problem-title" href="<?= e(problem_url($problem['problem_code'])) ?>"><?= e($problem['title'] ?? t('missing_translation')) ?></a>
         <?php if ($mainTag): ?><span class="tag-chip"><?= e($mainTag) ?></span><?php endif; ?>
-        <?= render_stars((int) $problem['difficulty']) ?>
+        <?= render_stars($problem['difficulty']) ?>
         <div class="problem-actions">
             <?php if (!empty($problem['hint_html'])): ?>
                 <button class="icon-btn js-toggle-panel" type="button" data-target="#<?= e($cardId) ?>-hint" aria-label="<?= e(t('hint')) ?>">?</button>

@@ -14,10 +14,10 @@ mysql -u USER -p DATABASE < database/schema.sql
 mysql -u USER -p DATABASE < database/seed.sql
 ```
 
-If the database was created from the older export, run this compatibility migration instead of rebuilding data:
+If the database was created from the older export, run this upgrade migration to keep existing users, problems, and translations:
 
 ```bash
-mysql -u USER -p DATABASE < database/compat_from_old_export.sql
+mysql -u USER -p DATABASE < database/upgrade_legacy_to_new.sql
 ```
 
 5. Point the subdomain document root to this folder. No `/public` folder is required.

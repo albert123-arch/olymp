@@ -16,7 +16,7 @@ include __DIR__ . '/includes/layout/header.php';
         <div>
             <a class="small text-decoration-none" href="<?= e(chapter_url($problem['course_slug'] ?? 'number-theory', $problem['chapter_slug'] ?? '')) ?>">&larr; <?= e(t('back_to_chapter')) ?></a>
             <h1 class="h3 mt-2"><?= e($problem['title'] ?? t('missing_translation')) ?><?= missing_translation_badge($problem) ?></h1>
-            <div class="text-muted"><?= e($problem['problem_code']) ?> · <?= render_stars((int) ($problem['difficulty'] ?? 1)) ?></div>
+            <div class="text-muted"><?= e($problem['problem_code']) ?> · <?= render_stars($problem['difficulty'] ?? 1) ?></div>
         </div>
         <div class="problem-actions align-self-start">
             <button class="icon-btn js-solved" type="button" aria-label="<?= e(t('mark_solved')) ?>">○</button>
