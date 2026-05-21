@@ -13,6 +13,9 @@ include __DIR__ . '/includes/layout/header.php';
 <?php if (!db_available()): ?>
   <?php render_db_notice(); ?>
 <?php else: ?>
+  <?php if (!$course || ($chapterSlug !== '' && !$chapter)): ?>
+    <?= coming_soon_block() ?>
+  <?php endif; ?>
   <div class="toolbar practice-toolbar">
     <label>
       <span><?= h(t('search')) ?></span>
@@ -38,6 +41,9 @@ include __DIR__ . '/includes/layout/header.php';
       </select>
     </label>
   </div>
+  <?php if (!$problems): ?>
+    <?= coming_soon_block() ?>
+  <?php endif; ?>
   <?php foreach ($problems as $problem): ?>
     <?php include __DIR__ . '/includes/components/problem-card.php'; ?>
   <?php endforeach; ?>

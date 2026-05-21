@@ -11,8 +11,8 @@ $isActive = ($course['status'] ?? '') === 'active';
         <?= h($isActive ? t('active_now') : t('coming_soon')) ?>
       </span>
     </div>
-    <div class="text-secondary flex-grow-1"><?= $course['summary_html'] ?? '' ?></div>
-    <a class="btn btn-primary mt-3 <?= $isActive ? '' : 'disabled' ?>" href="<?= h(course_url((string)($course['slug'] ?? ''))) ?>">
+    <div class="text-secondary flex-grow-1"><?= html_or_soon($course['summary_html'] ?? '') ?></div>
+    <a class="btn <?= $isActive ? 'btn-primary' : 'btn-outline-secondary' ?> mt-3" href="<?= h(course_url((string)($course['slug'] ?? ''))) ?>">
       <?= h(t('open_course')) ?>
     </a>
   </div>

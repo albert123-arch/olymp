@@ -12,7 +12,7 @@ include __DIR__ . '/includes/layout/header.php';
   <div class="mb-4">
     <a href="<?= h(url('index.php')) ?>" class="link-secondary"><?= h(t('back')) ?></a>
     <h1 class="fw-bold mt-2"><?= h($course['title']) ?></h1>
-    <div class="lead text-secondary"><?= $course['summary_html'] ?></div>
+    <div class="lead text-secondary"><?= html_or_soon($course['summary_html'] ?? '') ?></div>
   </div>
   <ul class="nav nav-tabs hash-tab-nav" role="tablist">
     <?php foreach (['overview', 'chapters', 'practice', 'worksheets', 'teacher_guide'] as $i => $key): ?>
@@ -22,10 +22,14 @@ include __DIR__ . '/includes/layout/header.php';
     <?php endforeach; ?>
   </ul>
   <div class="tab-content hash-tab-content border border-top-0 p-3 p-lg-4 bg-white">
-    <section class="tab-pane active" id="overview"><?= $course['overview_html'] ?></section>
+    <section class="tab-pane active" id="overview"><?= html_or_soon($course['overview_html'] ?? '') ?></section>
     <section class="tab-pane" id="chapters">
+      <?php $chapters = fetch_chapters((int)$course['id']); ?>
+      <?php if (!$chapters): ?>
+        <?= coming_soon_block() ?>
+      <?php endif; ?>
       <div class="row g-3">
-        <?php foreach (fetch_chapters((int)$course['id']) as $chapter): ?>
+        <?php foreach ($chapters as $chapter): ?>
           <?php $chapter['course_slug'] = $course['slug']; ?>
           <div class="col-lg-6"><?php include __DIR__ . '/includes/components/chapter-card.php'; ?></div>
         <?php endforeach; ?>
@@ -33,12 +37,16 @@ include __DIR__ . '/includes/layout/header.php';
     </section>
     <section class="tab-pane" id="practice">
       <p><a class="btn btn-outline-primary" href="<?= h(practice_url((string)$course['slug'])) ?>"><?= h(t('practice')) ?></a></p>
-      <?php foreach (fetch_problems(null, (int)$course['id']) as $problem): ?>
+      <?php $problems = fetch_problems(null, (int)$course['id']); ?>
+      <?php if (!$problems): ?>
+        <?= coming_soon_block() ?>
+      <?php endif; ?>
+      <?php foreach ($problems as $problem): ?>
         <?php include __DIR__ . '/includes/components/problem-card.php'; ?>
       <?php endforeach; ?>
     </section>
-    <section class="tab-pane" id="worksheets"><p class="text-secondary"><?= h(t('worksheets')) ?></p></section>
-    <section class="tab-pane" id="teacher_guide"><?= $course['teacher_guide_html'] ?></section>
+    <section class="tab-pane" id="worksheets"><?= coming_soon_block() ?></section>
+    <section class="tab-pane" id="teacher_guide"><?= html_or_soon($course['teacher_guide_html'] ?? '') ?></section>
   </div>
   <script>
     (function () {

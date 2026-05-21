@@ -383,7 +383,7 @@ function difficulty_level_key(string $difficulty): string
 function problem_type_key(array $problem): string
 {
     $tags = array_filter(explode(',', (string)($problem['tags_csv'] ?? '')));
-    if (($problem['problem_code'] ?? '') === 'NT-01-040') {
+    if (in_array('warmup', $tags, true) || in_array('olympiad', $tags, true)) {
         return 'warmup';
     }
     if (in_array('counterexample', $tags, true)) {
@@ -398,6 +398,48 @@ function problem_type_key(array $problem): string
 function tag_label(string $tag, ?string $lang = null): string
 {
     $lang ??= current_lang();
+    $ruLabels = [
+        'absolute-value' => 'Модуль',
+        'classification' => 'Классификация',
+        'consecutive-integers' => 'Последовательные числа',
+        'coprime' => 'Взаимно простые',
+        'counterexample' => 'Контрпример',
+        'counting' => 'Подсчет',
+        'definition' => 'Определение',
+        'difference' => 'Разность',
+        'digits' => 'Цифры',
+        'divisibility' => 'Делимость',
+        'divisibility-test' => 'Признаки делимости',
+        'divisors' => 'Делители',
+        'divisor-counting' => 'Подсчет делителей',
+        'equation' => 'Уравнение',
+        'exponent' => 'Показатель',
+        'exponents' => 'Показатели',
+        'expression' => 'Выражение',
+        'factorial' => 'Факториал',
+        'factorisation' => 'Разложение на множители',
+        'prime-factorisation' => 'Разложение на простые множители',
+        'gcd' => 'НОД',
+        'identity' => 'Тождество',
+        'impossibility' => 'Невозможность',
+        'integer' => 'Целые числа',
+        'lcm' => 'НОК',
+        'linear-combination' => 'Линейная комбинация',
+        'listing' => 'Перечисление',
+        'modular-arithmetic' => 'Сравнения',
+        'optimization' => 'Оптимизация',
+        'prime' => 'Простые числа',
+        'proof' => 'Доказательство',
+        'remainder' => 'Остатки',
+        'remainders' => 'Остатки',
+        'squares' => 'Квадраты',
+        'tau-function' => 'Число делителей',
+        'trailing-zeros' => 'Нули в конце',
+        'transitivity' => 'Транзитивность',
+    ];
+    if ($lang === 'ru' && array_key_exists($tag, $ruLabels)) {
+        return $ruLabels[$tag];
+    }
     $labels = [
         'ru' => [
             'absolute-value' => 'Модуль',
@@ -446,4 +488,14 @@ function tag_label(string $tag, ?string $lang = null): string
 function render_db_notice(): void
 {
     echo '<div class="alert alert-warning my-4">' . h(t('missing_db')) . '</div>';
+}
+
+function coming_soon_block(): string
+{
+    return '<div class="text-secondary py-2">' . h(t('coming_soon_status')) . '</div>';
+}
+
+function html_or_soon(?string $html): string
+{
+    return trim((string)$html) !== '' ? (string)$html : coming_soon_block();
 }

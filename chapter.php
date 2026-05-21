@@ -13,7 +13,7 @@ include __DIR__ . '/includes/layout/header.php';
   <div class="mb-4">
     <a href="<?= h(course_url($courseSlug)) ?>" class="link-secondary"><?= h(t('back')) ?></a>
     <h1 class="fw-bold mt-2"><?= h($chapter['title']) ?></h1>
-    <div class="lead text-secondary"><?= $chapter['summary_html'] ?></div>
+    <div class="lead text-secondary"><?= html_or_soon($chapter['summary_html'] ?? '') ?></div>
   </div>
   <ul class="nav nav-tabs hash-tab-nav" role="tablist">
     <?php foreach (['theory', 'examples', 'practice', 'worksheet', 'teacher_notes'] as $i => $key): ?>
@@ -23,11 +23,11 @@ include __DIR__ . '/includes/layout/header.php';
     <?php endforeach; ?>
   </ul>
   <div class="tab-content hash-tab-content border border-top-0 p-3 p-lg-4 bg-white">
-    <section class="tab-pane active math-content" id="theory"><?= $chapter['theory_html'] ?></section>
-    <section class="tab-pane math-content" id="examples"><?= $chapter['examples_html'] ?></section>
+    <section class="tab-pane active math-content" id="theory"><?= html_or_soon($chapter['theory_html'] ?? '') ?></section>
+    <section class="tab-pane math-content" id="examples"><?= html_or_soon($chapter['examples_html'] ?? '') ?></section>
     <section class="tab-pane" id="practice">
       <?php $problems = fetch_problems((int)$chapter['id']); ?>
-      <?php if (!$problems): ?><p class="text-secondary"><?= h(t('no_records')) ?></p><?php endif; ?>
+      <?php if (!$problems): ?><?= coming_soon_block() ?><?php endif; ?>
       <p><a class="btn btn-outline-primary" href="<?= h(practice_url($courseSlug, $chapterSlug)) ?>"><?= h(t('practice')) ?></a></p>
       <div class="toolbar practice-toolbar">
         <label><span><?= h(t('search')) ?></span><input id="searchInput" type="search" class="form-control" autocomplete="off"></label>
@@ -38,10 +38,10 @@ include __DIR__ . '/includes/layout/header.php';
         <?php include __DIR__ . '/includes/components/problem-card.php'; ?>
       <?php endforeach; ?>
     </section>
-    <section class="tab-pane math-content" id="worksheet"><?= $chapter['worksheet_html'] ?></section>
+    <section class="tab-pane math-content" id="worksheet"><?= html_or_soon($chapter['worksheet_html'] ?? '') ?></section>
     <section class="tab-pane math-content" id="teacher_notes">
       <?php if (user_can_manage_content()): ?>
-        <?= $chapter['teacher_notes_html'] ?>
+        <?= html_or_soon($chapter['teacher_notes_html'] ?? '') ?>
       <?php else: ?>
         <div class="alert alert-warning"><?= h(t('access_denied')) ?></div>
       <?php endif; ?>

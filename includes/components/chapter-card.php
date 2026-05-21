@@ -10,7 +10,7 @@ $chapterSlug = (string)($chapter['slug'] ?? '');
       <h2 class="h5 mb-0"><?= h($chapter['sort_order'] ?? '') ?>. <?= h($chapter['title'] ?? '') ?></h2>
       <span class="badge text-bg-light border"><?= h(t('chapters')) ?></span>
     </div>
-    <div class="text-secondary mb-3"><?= $chapter['summary_html'] ?? '' ?></div>
+    <div class="text-secondary mb-3"><?= html_or_soon($chapter['summary_html'] ?? '') ?></div>
     <a class="btn btn-outline-primary" href="<?= h(chapter_url($courseSlug, $chapterSlug)) ?>">
       <?= h(t('open_chapter')) ?>
     </a>
