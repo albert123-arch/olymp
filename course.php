@@ -5,8 +5,7 @@ $slug = (string)($_GET['course'] ?? '');
 if (db_available() && $slug === '') {
     $firstCourse = fetch_first_course();
     if ($firstCourse) {
-        header('Location: ' . course_url($firstCourse['slug']));
-        exit;
+        $slug = $firstCourse['slug'];
     }
 }
 $course = db_available() && $slug !== '' ? fetch_course($slug) : null;

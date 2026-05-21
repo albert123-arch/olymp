@@ -6,11 +6,10 @@ $chapterSlug = (string)($_GET['chapter'] ?? '');
 if (db_available() && $courseSlug === '') {
     $firstCourse = fetch_first_course();
     if ($firstCourse) {
-        header('Location: ' . practice_url($firstCourse['slug']));
-        exit;
+        $courseSlug = $firstCourse['slug'];
     }
 }
-$course = db_available() ? fetch_course($courseSlug) : null;
+$course = db_available() && $courseSlug !== '' ? fetch_course($courseSlug) : null;
 $chapter = db_available() && $chapterSlug !== '' ? fetch_chapter($courseSlug, $chapterSlug) : null;
 $problems = db_available() && $course ? fetch_problems($chapter ? (int)$chapter['id'] : null, (int)$course['id']) : [];
 $pageTitle = t('practice') . ' | ' . t('site_title');

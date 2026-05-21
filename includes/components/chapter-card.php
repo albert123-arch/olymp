@@ -2,6 +2,9 @@
 declare(strict_types=1);
 $chapter = $chapter ?? [];
 $courseSlug = (string)($chapter['course_slug'] ?? ($_GET['course'] ?? ''));
+if ($courseSlug === '' && db_available()) {
+    $courseSlug = fetch_first_course_slug() ?? '';
+}
 $chapterSlug = (string)($chapter['slug'] ?? '');
 ?>
 <article class="card chapter-card h-100 shadow-sm">

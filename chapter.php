@@ -6,8 +6,7 @@ $chapterSlug = (string)($_GET['chapter'] ?? '');
 if (db_available() && $courseSlug === '') {
     $firstCourse = fetch_first_course();
     if ($firstCourse) {
-        header('Location: ' . course_url($firstCourse['slug']));
-        exit;
+        $courseSlug = $firstCourse['slug'];
     }
 }
 if (db_available() && $courseSlug !== '' && $chapterSlug === '') {
@@ -15,12 +14,11 @@ if (db_available() && $courseSlug !== '' && $chapterSlug === '') {
     if ($course) {
         $firstChapter = fetch_first_chapter((int)$course['id']);
         if ($firstChapter) {
-            header('Location: ' . chapter_url($courseSlug, $firstChapter['slug']));
-            exit;
+            $chapterSlug = $firstChapter['slug'];
         }
     }
 }
-$chapter = db_available() ? fetch_chapter($courseSlug, $chapterSlug) : null;
+$chapter = db_available() && $courseSlug !== '' && $chapterSlug !== '' ? fetch_chapter($courseSlug, $chapterSlug) : null;
 $canManageContent = user_can_manage_content();
 $chapterTabs = ['theory', 'examples', 'practice', 'worksheet'];
 if ($canManageContent) {

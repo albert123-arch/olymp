@@ -1,6 +1,11 @@
 <?php
 declare(strict_types=1);
 $course = $course ?? [];
+$courseSlug = (string)($course['slug'] ?? '');
+if ($courseSlug === '' && db_available()) {
+    $firstCourse = fetch_first_course();
+    $courseSlug = $firstCourse['slug'] ?? '';
+}
 $isActive = ($course['status'] ?? '') === 'active';
 ?>
 <article class="card course-card h-100 shadow-sm">
@@ -12,7 +17,7 @@ $isActive = ($course['status'] ?? '') === 'active';
       </span>
     </div>
     <div class="text-secondary flex-grow-1"><?= html_or_soon($course['summary_html'] ?? '') ?></div>
-    <a class="btn <?= $isActive ? 'btn-primary' : 'btn-outline-secondary' ?> mt-3" href="<?= h(course_url((string)($course['slug'] ?? ''))) ?>">
+    <a class="btn <?= $isActive ? 'btn-primary' : 'btn-outline-secondary' ?> mt-3" href="<?= h(course_url($courseSlug)) ?>">
       <?= h(t('open_course')) ?>
     </a>
   </div>
