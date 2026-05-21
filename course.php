@@ -14,14 +14,14 @@ include __DIR__ . '/includes/layout/header.php';
     <h1 class="fw-bold mt-2"><?= h($course['title']) ?></h1>
     <div class="lead text-secondary"><?= $course['summary_html'] ?></div>
   </div>
-  <ul class="nav nav-tabs" role="tablist">
+  <ul class="nav nav-tabs hash-tab-nav" role="tablist">
     <?php foreach (['overview', 'chapters', 'practice', 'worksheets', 'teacher_guide'] as $i => $key): ?>
       <li class="nav-item" role="presentation">
         <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" data-bs-toggle="tab" data-bs-target="#<?= h($key) ?>" href="#<?= h($key) ?>" role="tab" aria-controls="<?= h($key) ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>"><?= h(t($key)) ?></a>
       </li>
     <?php endforeach; ?>
   </ul>
-  <div class="tab-content border border-top-0 p-3 p-lg-4 bg-white">
+  <div class="tab-content hash-tab-content border border-top-0 p-3 p-lg-4 bg-white">
     <section class="tab-pane fade show active" id="overview"><?= $course['overview_html'] ?></section>
     <section class="tab-pane fade" id="chapters">
       <div class="row g-3">
@@ -40,5 +40,28 @@ include __DIR__ . '/includes/layout/header.php';
     <section class="tab-pane fade" id="worksheets"><p class="text-secondary"><?= h(t('worksheets')) ?></p></section>
     <section class="tab-pane fade" id="teacher_guide"><?= $course['teacher_guide_html'] ?></section>
   </div>
+  <script>
+    (function () {
+      function openHashTab() {
+        var hash = window.location.hash;
+        if (!hash) return;
+        var pane = document.querySelector(hash + '.tab-pane');
+        var link = document.querySelector('.hash-tab-nav [href="' + hash + '"], .hash-tab-nav [data-bs-target="' + hash + '"]');
+        if (!pane || !link) return;
+        document.querySelectorAll('.hash-tab-content > .tab-pane').forEach(function (el) {
+          el.classList.remove('active', 'show');
+        });
+        document.querySelectorAll('.hash-tab-nav .nav-link').forEach(function (el) {
+          el.classList.remove('active');
+          el.setAttribute('aria-selected', 'false');
+        });
+        pane.classList.add('active', 'show');
+        link.classList.add('active');
+        link.setAttribute('aria-selected', 'true');
+      }
+      window.addEventListener('hashchange', openHashTab);
+      openHashTab();
+    })();
+  </script>
 <?php endif; ?>
 <?php include __DIR__ . '/includes/layout/footer.php'; ?>
