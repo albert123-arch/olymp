@@ -226,18 +226,37 @@ function app_url(string $path = '', array $params = []): string
     return url($path, $params);
 }
 
-function course_url(string $courseSlug): string
+function course_url(string $courseSlug = ''): string
 {
+    if ($courseSlug === '' && db_available()) {
+        $slug = fetch_first_course_slug();
+        $courseSlug = $slug ?? '';
+    }
     return url('course.php', ['course' => $courseSlug]);
 }
 
-function chapter_url(string $courseSlug, string $chapterSlug): string
+function chapter_url(string $courseSlug = '', string $chapterSlug = ''): string
 {
+    if ($courseSlug === '' && db_available()) {
+        $firstCourse = fetch_first_course();
+        $courseSlug = $firstCourse['slug'] ?? '';
+    }
+    if ($chapterSlug === '' && $courseSlug !== '' && db_available()) {
+        $course = fetch_course($courseSlug);
+        if ($course) {
+            $firstChapter = fetch_first_chapter((int)$course['id']);
+            $chapterSlug = $firstChapter['slug'] ?? '';
+        }
+    }
     return url('chapter.php', ['course' => $courseSlug, 'chapter' => $chapterSlug]);
 }
 
-function practice_url(string $courseSlug, ?string $chapterSlug = null): string
+function practice_url(string $courseSlug = '', ?string $chapterSlug = null): string
 {
+    if ($courseSlug === '' && db_available()) {
+        $slug = fetch_first_course_slug();
+        $courseSlug = $slug ?? '';
+    }
     $params = ['course' => $courseSlug];
     if ($chapterSlug !== null && $chapterSlug !== '') {
         $params['chapter'] = $chapterSlug;

@@ -38,14 +38,7 @@ $user = current_user();
     <div class="collapse navbar-collapse" id="topNav">
       <ul class="navbar-nav me-auto">
         <li class="nav-item"><a class="nav-link" href="<?= h(url('index.php')) ?>"><?= h(t('home')) ?></a></li>
-        <?php
-          $practiceCourseSlug = '';
-          if (db_available()) {
-              $practiceCourseSlug = fetch_first_course_slug() ?? '';
-          }
-          $practiceLink = $practiceCourseSlug !== '' ? practice_url($practiceCourseSlug) : url('practice.php');
-        ?>
-        <li class="nav-item"><a class="nav-link" href="<?= h($practiceLink) ?>"><?= h(t('practice')) ?></a></li>
+        <li class="nav-item"><a class="nav-link" href="<?= h(practice_url()) ?>"><?= h(t('practice')) ?></a></li>
         <?php if (user_can_manage_content($user)): ?>
           <li class="nav-item"><a class="nav-link" href="<?= h(url('admin/index.php')) ?>"><?= h(t('admin')) ?></a></li>
         <?php endif; ?>
