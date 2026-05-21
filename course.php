@@ -13,7 +13,7 @@ include __DIR__ . '/includes/layout/header.php';
 <div class="mb-4">
     <a class="small text-decoration-none" href="<?= e(url('index.php')) ?>">&larr; <?= e(t('home')) ?></a>
     <h1 class="mt-2"><?= e($course['title'] ?? t('missing_translation')) ?><?= missing_translation_badge($course) ?></h1>
-    <div class="text-muted math-content"><?= $course['description_html'] ?? '' ?></div>
+    <div class="text-muted math-content"><?= math_html($course['description_html'] ?? '') ?></div>
 </div>
 
 <ul class="nav nav-tabs mb-3" role="tablist">

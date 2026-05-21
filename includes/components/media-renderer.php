@@ -35,7 +35,7 @@ function render_problem_media($problemId, $role)
     foreach ($items as $item): ?>
         <figure class="problem-media my-3">
             <img class="img-fluid rounded shadow-sm" src="<?= e(url($item['file_path'], [])) ?>" alt="<?= e($item['alt_text'] ?? '') ?>">
-            <?php if (!empty($item['caption_html'])): ?><figcaption class="small text-muted mt-1"><?= $item['caption_html'] ?></figcaption><?php endif; ?>
+            <?php if (!empty($item['caption_html'])): ?><figcaption class="small text-muted mt-1"><?= math_html($item['caption_html']) ?></figcaption><?php endif; ?>
         </figure>
     <?php endforeach;
 }

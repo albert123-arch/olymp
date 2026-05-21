@@ -23,19 +23,19 @@ $cardId = 'problem-' . preg_replace('/[^A-Za-z0-9_-]/', '-', $problem['problem_c
     <?php if (!empty($problem['translation_missing'])): ?>
         <div class="alert alert-warning py-2 small mb-2"><?= e(t('missing_translation_warning')) ?></div>
     <?php endif; ?>
-    <div class="problem-statement"><?= $problem['statement_html'] ?? '' ?></div>
+    <div class="problem-statement"><?= math_html($problem['statement_html'] ?? '') ?></div>
     <?php render_problem_media((int) $problem['id'], 'statement'); ?>
     <?php if (!empty($problem['hint_html'])): ?>
         <div id="<?= e($cardId) ?>-hint" class="soft-panel hint-panel d-none">
             <div class="fw-semibold mb-1"><?= e(t('hint')) ?></div>
-            <?= $problem['hint_html'] ?>
+            <?= math_html($problem['hint_html']) ?>
             <?php render_problem_media((int) $problem['id'], 'hint'); ?>
         </div>
     <?php endif; ?>
     <?php if (!empty($problem['solution_html'])): ?>
         <button class="link-button js-toggle-panel mt-2" type="button" data-target="#<?= e($cardId) ?>-solution"><?= icon('solution') ?> <?= e(t('solution')) ?></button>
         <div id="<?= e($cardId) ?>-solution" class="soft-panel solution-panel d-none">
-            <?= $problem['solution_html'] ?>
+            <?= math_html($problem['solution_html']) ?>
             <?php render_problem_media((int) $problem['id'], 'solution'); ?>
         </div>
     <?php endif; ?>

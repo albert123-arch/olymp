@@ -8,6 +8,11 @@ function e($value)
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+function math_html($html)
+{
+    return str_replace('\\\\', '\\', (string) $html);
+}
+
 function base_path()
 {
     $base = app_config()['app']['base_url'] ?? '';

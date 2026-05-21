@@ -27,18 +27,18 @@ include __DIR__ . '/includes/layout/header.php';
         <div class="mb-3"><?php foreach ($tags as $tag): ?><span class="tag-chip me-1"><?= e($tag['title'] ?? $tag['slug']) ?></span><?php endforeach; ?></div>
     <?php endif; ?>
     <h2 class="h5"><?= e(t('statement')) ?></h2>
-    <div class="math-content"><?= $problem['statement_html'] ?? '' ?></div>
+    <div class="math-content"><?= math_html($problem['statement_html'] ?? '') ?></div>
     <?php if ($problem['id']) { render_problem_media((int) $problem['id'], 'statement'); } ?>
     <?php if (!empty($problem['hint_html'])): ?>
         <button class="btn btn-sm btn-outline-secondary mt-3 js-toggle-panel" data-target="#hint" type="button">? <?= e(t('hint')) ?></button>
-        <div id="hint" class="soft-panel hint-panel d-none math-content"><?= $problem['hint_html'] ?><?php render_problem_media((int) $problem['id'], 'hint'); ?></div>
+        <div id="hint" class="soft-panel hint-panel d-none math-content"><?= math_html($problem['hint_html']) ?><?php render_problem_media((int) $problem['id'], 'hint'); ?></div>
     <?php endif; ?>
     <?php if (!empty($problem['solution_html'])): ?>
         <button class="btn btn-sm btn-accent mt-3 js-toggle-panel" data-target="#solution" type="button"><?= e(t('solution')) ?></button>
-        <div id="solution" class="soft-panel solution-panel d-none math-content"><?= $problem['solution_html'] ?><?php render_problem_media((int) $problem['id'], 'solution'); ?></div>
+        <div id="solution" class="soft-panel solution-panel d-none math-content"><?= math_html($problem['solution_html']) ?><?php render_problem_media((int) $problem['id'], 'solution'); ?></div>
     <?php endif; ?>
     <?php if (is_teacher() && !empty($problem['teacher_note_html'])): ?>
-        <div class="soft-panel mt-3 math-content"><div class="fw-semibold"><?= e(t('teacher_note')) ?></div><?= $problem['teacher_note_html'] ?></div>
+        <div class="soft-panel mt-3 math-content"><div class="fw-semibold"><?= e(t('teacher_note')) ?></div><?= math_html($problem['teacher_note_html']) ?></div>
     <?php endif; ?>
 </article>
 <?php include __DIR__ . '/includes/layout/footer.php'; ?>
