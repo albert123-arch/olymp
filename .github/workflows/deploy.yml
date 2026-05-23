@@ -1,0 +1,86 @@
+name: Deploy Olympiad Laravel to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, pdo_mysql, zip, curl, fileinfo, openssl, gd
+          coverage: none
+
+      - name: Install Laravel production dependencies
+        working-directory: laravel
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Prepare CI Laravel environment
+        working-directory: laravel
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Publish Filament assets
+        working-directory: laravel
+        run: php artisan filament:assets
+
+      - name: Prepare Laravel writable folders
+        run: |
+          mkdir -p laravel/storage/framework/cache/data
+          mkdir -p laravel/storage/framework/sessions
+          mkdir -p laravel/storage/framework/views
+          mkdir -p laravel/storage/logs
+          mkdir -p laravel/bootstrap/cache
+          touch laravel/storage/framework/cache/data/.gitkeep
+          touch laravel/storage/framework/sessions/.gitkeep
+          touch laravel/storage/framework/views/.gitkeep
+          touch laravel/storage/logs/.gitkeep
+          touch laravel/bootstrap/cache/.gitkeep
+
+      - name: Copy public Laravel assets to root
+        run: |
+          if [ -d "laravel/public/vendor" ]; then cp -R laravel/public/vendor ./vendor; fi
+          if [ -d "laravel/public/build" ]; then cp -R laravel/public/build ./build; fi
+          if [ -d "laravel/public/css" ]; then cp -R laravel/public/css ./css; fi
+          if [ -d "laravel/public/js" ]; then cp -R laravel/public/js ./js; fi
+          if [ -f "laravel/public/favicon.svg" ]; then cp laravel/public/favicon.svg ./favicon.svg; fi
+          if [ -f "laravel/public/favicon.ico" ]; then cp laravel/public/favicon.ico ./favicon.ico; fi
+          if [ -f "laravel/public/apple-touch-icon.png" ]; then cp laravel/public/apple-touch-icon.png ./apple-touch-icon.png; fi
+          if [ -f "laravel/public/site.webmanifest" ]; then cp laravel/public/site.webmanifest ./site.webmanifest; fi
+
+      - name: Remove CI .env before deploy
+        run: rm -f laravel/.env
+
+      - name: Deploy by FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./
+          server-dir: ./
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.github/**
+            **/.env
+            **/.env.*
+            **/node_modules/**
+            **/*.sql
+            **/*.sql.gz
+            **/*.zip
+            **/*.tar
+            **/*.tar.gz
+            **/composer-setup.php
+            **/composer.phar
+            **/storage/logs/*.log
