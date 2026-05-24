@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Language extends Model
 {
@@ -23,4 +24,9 @@ class Language extends Model
         'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
+
+    public function problemLadderTexts(): HasMany
+    {
+        return $this->hasMany(ProblemLadderText::class, 'language_id');
+    }
 }

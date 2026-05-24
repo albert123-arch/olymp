@@ -10,6 +10,8 @@ return [
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
     'cipher' => 'AES-256-CBC',
+
+    'admin_email' => env('ADMIN_EMAIL'),
     'key' => env('APP_KEY'),
     'previous_keys' => [
         ...array_filter(explode(',', env('APP_PREVIOUS_KEYS', ''))),

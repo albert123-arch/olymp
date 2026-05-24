@@ -56,6 +56,22 @@ class User extends Authenticatable implements FilamentUser
         return in_array($this->role, ['admin', 'teacher'], true);
     }
 
+    public function isAdminUser(): bool
+    {
+        if (array_key_exists('is_admin', $this->attributes)) {
+            return (bool) $this->attributes['is_admin'];
+        }
+
+        if (($this->role ?? null) === 'admin') {
+            return true;
+        }
+
+        $adminEmail = config('app.admin_email');
+        return is_string($adminEmail)
+            && $adminEmail !== ''
+            && strcasecmp((string) $this->email, $adminEmail) === 0;
+    }
+
     public function bookmarks(): HasMany
     {
         return $this->hasMany(Bookmark::class);

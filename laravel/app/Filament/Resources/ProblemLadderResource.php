@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProblemLadderResource\Pages;
+use App\Filament\Resources\ProblemLadderResource\RelationManagers\LadderTextsRelationManager;
 use App\Models\ProblemLadder;
 use Filament\Forms;
 use Filament\Resources\Resource;
@@ -70,6 +71,13 @@ class ProblemLadderResource extends Resource
             'index' => Pages\ListProblemLadders::route('/'),
             'create' => Pages\CreateProblemLadder::route('/create'),
             'edit' => Pages\EditProblemLadder::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            LadderTextsRelationManager::class,
         ];
     }
 }

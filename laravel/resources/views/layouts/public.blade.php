@@ -138,6 +138,32 @@
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('ladders.*') ? 'active fw-semibold' : '' }}" href="{{ route('ladders.index', ['lang' => $currentLang]) }}">{{ __('public.ladders') }}</a>
                     </li>
+                    @guest
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('login') ? 'active fw-semibold' : '' }}" href="{{ route('login', ['lang' => $currentLang]) }}">{{ __('public.login') }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('register') ? 'active fw-semibold' : '' }}" href="{{ route('register', ['lang' => $currentLang]) }}">{{ __('public.register') }}</a>
+                        </li>
+                    @else
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('dashboard') ? 'active fw-semibold' : '' }}" href="{{ route('dashboard', ['lang' => $currentLang]) }}">{{ __('public.dashboard') }}</a>
+                        </li>
+                        @if(method_exists(auth()->user(), 'isAdminUser') && auth()->user()->isAdminUser())
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url('/admin') }}">{{ __('public.admin') }}</a>
+                            </li>
+                        @endif
+                        <li class="nav-item">
+                            <span class="nav-link text-secondary">{{ auth()->user()->name ?: auth()->user()->email }}</span>
+                        </li>
+                        <li class="nav-item">
+                            <form method="POST" action="{{ route('logout', ['lang' => $currentLang]) }}">
+                                @csrf
+                                <button type="submit" class="btn btn-link nav-link p-0">{{ __('public.logout') }}</button>
+                            </form>
+                        </li>
+                    @endguest
                     <li class="nav-item ms-lg-2">
                         <div class="btn-group btn-group-sm" role="group" aria-label="Language switcher">
                             @foreach($availableLanguages as $language)

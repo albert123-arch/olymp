@@ -38,6 +38,41 @@ class PublicPageController extends Controller
         ]);
     }
 
+    public function dashboard(): View
+    {
+        $lang = $this->setLocale();
+        $user = auth()->user();
+        abort_unless($user !== null, 403);
+
+        $solvedCount = DB::table('user_problem_progress')
+            ->where('user_id', (int) $user->id)
+            ->where('status', 'solved')
+            ->count();
+        $bookmarksCount = DB::table('bookmarks')
+            ->where('user_id', (int) $user->id)
+            ->count();
+
+        $course = $this->publishedCourses()->with('texts')->first();
+        $coursePayload = null;
+        if ($course) {
+            $coursePayload = [
+                'title' => $this->resolveText($course->texts, $lang)?->title ?? $course->slug,
+                'url' => route('course.show', ['course' => $course->slug, 'lang' => $lang]),
+                'practice_url' => route('course.practice', ['course' => $course->slug, 'lang' => $lang]),
+            ];
+        }
+
+        return view('public.dashboard', [
+            ...$this->baseViewData($lang),
+            'dashboard' => [
+                'course' => $coursePayload,
+                'solved_count' => $solvedCount,
+                'bookmarks_count' => $bookmarksCount,
+                'is_admin' => method_exists($user, 'isAdminUser') ? $user->isAdminUser() : false,
+            ],
+        ]);
+    }
+
     public function courses(): View
     {
         $lang = $this->setLocale();
@@ -138,6 +173,7 @@ class PublicPageController extends Controller
         $chapterLadders = ProblemLadder::query()
             ->where('is_published', true)
             ->where('chapter_id', $chapter->id)
+            ->with('texts.language')
             ->withCount('steps')
             ->orderBy('sort_order')
             ->orderBy('id')
@@ -208,7 +244,7 @@ class PublicPageController extends Controller
 
         $ladders = ProblemLadder::query()
             ->where('is_published', true)
-            ->with(['course.texts', 'chapter.texts'])
+            ->with(['course.texts', 'chapter.texts', 'texts.language'])
             ->withCount('steps')
             ->orderBy('sort_order')
             ->orderBy('id')
@@ -278,6 +314,7 @@ class PublicPageController extends Controller
         $ladder->load([
             'course.texts',
             'chapter.texts',
+            'texts.language',
             'steps' => function ($query): void {
                 $query->orderBy('sort_order')->orderBy('id');
             },
@@ -306,6 +343,7 @@ class PublicPageController extends Controller
         $ladder->load([
             'course.texts',
             'chapter.texts',
+            'texts.language',
             'steps' => function ($query): void {
                 $query->orderBy('sort_order')->orderBy('id');
             },
@@ -349,11 +387,9 @@ class PublicPageController extends Controller
             ...$this->baseViewData($lang),
             'ladder' => [
                 'slug' => $ladder->slug,
-                'title' => $ladder->title,
-                'description' => $this->normalizeMathHtml($ladder->description),
+                ...$this->resolveLadderText($ladder, $lang),
                 'course' => $ladder->course ? $this->courseBreadcrumbData($ladder->course, $lang) : null,
                 'chapter' => $ladder->chapter ? $this->chapterNavData($ladder->chapter, $lang) : null,
-                'main_method' => $ladder->main_method,
                 'difficulty' => $this->normalizeDifficultyLevel($ladder->difficulty_level),
                 'difficulty_stars' => $this->difficultyStars($this->normalizeDifficultyLevel($ladder->difficulty_level)),
                 'steps' => $steps,
@@ -913,7 +949,7 @@ class PublicPageController extends Controller
             'is_bookmarked' => isset($interactionState['bookmarked'][(int) $problem->id]),
             'is_solved' => isset($interactionState['solved'][(int) $problem->id]),
             'can_track_progress' => (bool) ($interactionState['can_interact'] ?? false),
-            'login_url' => route('filament.admin.auth.login'),
+            'login_url' => route('login', ['lang' => $lang]),
         ];
     }
 
@@ -965,20 +1001,22 @@ class PublicPageController extends Controller
             'next_problem_url' => $nextProblemCode
                 ? route('problem.show', ['problem' => $nextProblemCode, 'lang' => $lang])
                 : null,
-            'login_url' => route('filament.admin.auth.login'),
+            'login_url' => route('login', ['lang' => $lang]),
         ];
     }
 
     private function ladderCardData(ProblemLadder $ladder, string $lang): array
     {
+        $text = $this->resolveLadderText($ladder, $lang);
+
         return [
             'id' => (int) $ladder->id,
             'slug' => $ladder->slug,
-            'title' => $ladder->title,
-            'description' => $this->normalizeMathHtml($ladder->description),
+            'title' => $text['title'],
+            'description' => $text['description'],
             'course' => $ladder->course ? $this->courseBreadcrumbData($ladder->course, $lang) : null,
             'chapter' => $ladder->chapter ? $this->chapterNavData($ladder->chapter, $lang) : null,
-            'main_method' => $ladder->main_method,
+            'main_method' => $text['main_method'],
             'difficulty' => $this->normalizeDifficultyLevel($ladder->difficulty_level),
             'difficulty_stars' => $this->difficultyStars($this->normalizeDifficultyLevel($ladder->difficulty_level)),
             'steps_count' => (int) ($ladder->steps_count ?? 0),
@@ -1018,6 +1056,49 @@ class PublicPageController extends Controller
                     ],
                 ];
             })->all(),
+        ];
+    }
+
+    private function resolveLadderText(ProblemLadder $ladder, string $lang): array
+    {
+        $fallback = [
+            'title' => (string) ($ladder->title ?: $ladder->slug),
+            'description' => $this->normalizeMathHtml($ladder->description),
+            'main_method' => $ladder->main_method,
+        ];
+
+        if (! $ladder->relationLoaded('texts')) {
+            return $fallback;
+        }
+
+        $texts = $ladder->texts;
+        if ($texts->isEmpty()) {
+            return $fallback;
+        }
+
+        $preferredCodes = array_values(array_unique([$lang, 'en', 'ru']));
+        foreach ($preferredCodes as $code) {
+            $candidate = $texts->first(function ($item) use ($code): bool {
+                return optional($item->language)->code === $code;
+            });
+            if ($candidate) {
+                return [
+                    'title' => $candidate->title ?: $fallback['title'],
+                    'description' => $this->normalizeMathHtml($candidate->description ?: $fallback['description']),
+                    'main_method' => $candidate->main_method ?: $fallback['main_method'],
+                ];
+            }
+        }
+
+        $first = $texts->first();
+        if (! $first) {
+            return $fallback;
+        }
+
+        return [
+            'title' => $first->title ?: $fallback['title'],
+            'description' => $this->normalizeMathHtml($first->description ?: $fallback['description']),
+            'main_method' => $first->main_method ?: $fallback['main_method'],
         ];
     }
 
@@ -1276,11 +1357,11 @@ class PublicPageController extends Controller
             return response()->json([
                 'ok' => false,
                 'message' => 'Authentication required.',
-                'login_url' => route('filament.admin.auth.login'),
+                'login_url' => route('login', ['lang' => (string) $request->query('lang', $this->currentLanguage())]),
             ], 401);
         }
 
-        return redirect()->route('filament.admin.auth.login');
+        return redirect()->route('login', ['lang' => (string) $request->query('lang', $this->currentLanguage())]);
     }
 
     private function calculateChapterProgress(int $chapterId, int $userId): ?array

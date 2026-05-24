@@ -42,4 +42,9 @@ class ProblemLadder extends Model
     {
         return $this->hasMany(ProblemLadderStep::class, 'ladder_id')->orderBy('sort_order')->orderBy('id');
     }
+
+    public function texts(): HasMany
+    {
+        return $this->hasMany(ProblemLadderText::class, 'problem_ladder_id');
+    }
 }

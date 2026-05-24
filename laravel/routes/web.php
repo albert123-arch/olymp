@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PublicPageController;
+use App\Http\Controllers\PublicAuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PublicPageController::class, 'home'])->name('home');
@@ -18,6 +19,16 @@ Route::get('/problems/{problem:problem_code}', [PublicPageController::class, 'pr
 Route::get('/ladders', [PublicPageController::class, 'ladders'])->name('ladders.index');
 Route::get('/ladders/{ladder:slug}', [PublicPageController::class, 'ladder'])->name('ladders.show');
 Route::get('/ladders/{ladder:slug}/practice', [PublicPageController::class, 'ladderPractice'])->name('ladders.practice');
+Route::get('/dashboard', [PublicPageController::class, 'dashboard'])->middleware('auth')->name('dashboard');
+
+Route::middleware('guest')->group(function (): void {
+    Route::get('/login', [PublicAuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [PublicAuthController::class, 'login'])->name('login.attempt');
+    Route::get('/register', [PublicAuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [PublicAuthController::class, 'register'])->name('register.store');
+});
+
+Route::post('/logout', [PublicAuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 Route::post('/problems/{problem:problem_code}/bookmark-toggle', [PublicPageController::class, 'toggleBookmark'])->name('problem.bookmark.toggle');
 Route::post('/problems/{problem:problem_code}/solved-toggle', [PublicPageController::class, 'toggleSolved'])->name('problem.solved.toggle');
