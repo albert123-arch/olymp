@@ -155,6 +155,9 @@
 
             @if ($activeTab === 'problems')
                 <x-filament::section>
+                    <div class="flex flex-wrap items-end justify-between gap-2 mb-4">
+                        <a href="{{ $quickAddUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-primary">+ Quick Add Problem</a>
+                    </div>
                     <div class="flex flex-wrap items-end gap-2 mb-4">
                         <button type="button" wire:click="publishSelected" class="fi-btn fi-btn-size-sm fi-btn-color-success">Publish selected</button>
                         <button type="button" wire:click="unpublishSelected" class="fi-btn fi-btn-size-sm fi-btn-color-danger">Unpublish selected</button>

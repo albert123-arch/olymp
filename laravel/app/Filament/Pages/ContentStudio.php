@@ -211,6 +211,7 @@ class ContentStudio extends Page
             'ladders' => $this->ladderRows($selectedChapter),
             'missing' => $this->missingTranslationsData($selectedChapter),
             'validation' => $this->validationWarnings($selectedChapter),
+            'quickAddUrl' => url('/admin/quick-problem') . $this->quickAddQueryString(),
         ];
     }
 
@@ -680,5 +681,22 @@ class ContentStudio extends Page
             ->body("Updated {$count} problem(s).")
             ->success()
             ->send();
+    }
+
+    private function quickAddQueryString(): string
+    {
+        $params = [];
+        if ($this->selectedCourseId !== null) {
+            $params['course_id'] = $this->selectedCourseId;
+        }
+        if ($this->selectedChapterId !== null) {
+            $params['chapter_id'] = $this->selectedChapterId;
+        }
+
+        if ($params === []) {
+            return '';
+        }
+
+        return '?' . http_build_query($params);
     }
 }
