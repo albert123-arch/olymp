@@ -36,6 +36,9 @@
                 </select>
             </div>
         </div>
+        <div class="flex justify-end">
+            <a href="{{ $translationQueueUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Translation Queue</a>
+        </div>
 
         <div class="flex flex-wrap gap-2 border-b pb-3">
             @foreach ($tabs as $tab)

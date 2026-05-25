@@ -212,6 +212,7 @@ class ContentStudio extends Page
             'missing' => $this->missingTranslationsData($selectedChapter),
             'validation' => $this->validationWarnings($selectedChapter),
             'quickAddUrl' => url('/admin/quick-problem') . $this->quickAddQueryString(),
+            'translationQueueUrl' => url('/admin/translation-queue') . $this->quickAddQueryString(),
         ];
     }
 
