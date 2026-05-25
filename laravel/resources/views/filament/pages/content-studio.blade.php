@@ -350,13 +350,5 @@
         @endif
     </div>
 
-    <script>
-        function contentStudioTypesetMath() {
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                MathJax.typesetPromise(document.querySelectorAll('.math-content'));
-            }
-        }
-        document.addEventListener('livewire:navigated', () => setTimeout(contentStudioTypesetMath, 120));
-        document.addEventListener('DOMContentLoaded', () => setTimeout(contentStudioTypesetMath, 120));
-    </script>
+    @include('filament.partials.admin-mathjax')
 </x-filament-panels::page>

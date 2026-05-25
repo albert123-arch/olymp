@@ -448,18 +448,5 @@
         @endif
     </div>
 
-    <script>
-        function moduleWorkspaceTypesetMath() {
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                MathJax.typesetPromise(document.querySelectorAll('.math-content'));
-            }
-        }
-        document.addEventListener('livewire:navigated', () => setTimeout(moduleWorkspaceTypesetMath, 120));
-        document.addEventListener('DOMContentLoaded', () => setTimeout(moduleWorkspaceTypesetMath, 120));
-        document.addEventListener('livewire:init', () => {
-            if (window.Livewire && Livewire.hook) {
-                Livewire.hook('morph.updated', () => setTimeout(moduleWorkspaceTypesetMath, 120));
-            }
-        });
-    </script>
+    @include('filament.partials.admin-mathjax')
 </x-filament-panels::page>
