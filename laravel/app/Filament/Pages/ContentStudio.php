@@ -213,6 +213,7 @@ class ContentStudio extends Page
             'validation' => $this->validationWarnings($selectedChapter),
             'quickAddUrl' => url('/admin/quick-problem') . $this->quickAddQueryString(),
             'translationQueueUrl' => url('/admin/translation-queue') . $this->quickAddQueryString(),
+            'moduleWorkspaceUrl' => url('/admin/module-workspace') . $this->quickAddQueryString(),
         ];
     }
 

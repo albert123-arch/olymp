@@ -36,7 +36,8 @@
                 </select>
             </div>
         </div>
-        <div class="flex justify-end">
+        <div class="flex justify-end gap-2">
+            <a href="{{ $moduleWorkspaceUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-primary">Module Workspace</a>
             <a href="{{ $translationQueueUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Translation Queue</a>
         </div>
 
