@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Livewire\Attributes\Url;
 use UnitEnum;
 
 class ModuleWorkspace extends Page
@@ -37,9 +38,16 @@ class ModuleWorkspace extends Page
 
     protected string $view = 'filament.pages.module-workspace';
 
+    #[Url(as: 'course_id', except: null)]
     public ?int $selectedCourseId = null;
+
+    #[Url(as: 'chapter_id', except: null)]
     public ?int $selectedChapterId = null;
+
+    #[Url(as: 'lang', except: 'ru')]
     public string $selectedLang = 'ru';
+
+    #[Url(as: 'tab', except: 'overview')]
     public string $activeTab = 'overview';
 
     public string $theoryRu = '';
@@ -56,6 +64,11 @@ class ModuleWorkspace extends Page
     {
         $courseId = request()->integer('course_id');
         $chapterId = request()->integer('chapter_id');
+        $lang = (string) request()->query('lang', $this->selectedLang);
+        $tab = (string) request()->query('tab', $this->activeTab);
+
+        $this->selectedLang = in_array($lang, ['ru', 'en'], true) ? $lang : 'ru';
+        $this->activeTab = $this->normalizeTab($tab);
 
         $defaultCourse = Course::query()->orderBy('sort_order')->orderBy('id')->first();
         $this->selectedCourseId = $courseId > 0 ? $courseId : ($defaultCourse ? (int) $defaultCourse->id : null);
@@ -76,14 +89,38 @@ class ModuleWorkspace extends Page
         $this->loadChapterEditorValues();
     }
 
+    public function updatedSelectedLang(): void
+    {
+        if (! in_array($this->selectedLang, ['ru', 'en'], true)) {
+            $this->selectedLang = 'ru';
+        }
+    }
+
     public function setActiveTab(string $tab): void
     {
+        $tab = $this->normalizeTab($tab);
+
         if (in_array($tab, $this->tabs(), true)) {
             $this->activeTab = $tab;
         }
     }
 
     public function saveTheory(): void
+    {
+        $this->saveTheoryBoth();
+    }
+
+    public function saveTheoryRu(): void
+    {
+        $this->saveEditorContent('ru', 'theory', $this->theoryRu, 'RU theory saved');
+    }
+
+    public function saveTheoryEn(): void
+    {
+        $this->saveEditorContent('en', 'theory', $this->theoryEn, 'EN theory saved');
+    }
+
+    public function saveTheoryBoth(): void
     {
         if ($this->selectedChapterId === null) {
             Notification::make()->title('Select chapter first')->warning()->send();
@@ -92,10 +129,25 @@ class ModuleWorkspace extends Page
 
         $this->saveChapterContent('ru', 'theory', $this->theoryRu);
         $this->saveChapterContent('en', 'theory', $this->theoryEn);
-        Notification::make()->title('Theory saved')->success()->send();
+        Notification::make()->title('RU and EN theory saved')->success()->send();
     }
 
     public function saveExamples(): void
+    {
+        $this->saveExamplesBoth();
+    }
+
+    public function saveExamplesRu(): void
+    {
+        $this->saveEditorContent('ru', 'examples', $this->examplesRu, 'RU examples saved');
+    }
+
+    public function saveExamplesEn(): void
+    {
+        $this->saveEditorContent('en', 'examples', $this->examplesEn, 'EN examples saved');
+    }
+
+    public function saveExamplesBoth(): void
     {
         if ($this->selectedChapterId === null) {
             Notification::make()->title('Select chapter first')->warning()->send();
@@ -104,7 +156,7 @@ class ModuleWorkspace extends Page
 
         $this->saveChapterContent('ru', 'examples', $this->examplesRu);
         $this->saveChapterContent('en', 'examples', $this->examplesEn);
-        Notification::make()->title('Examples saved')->success()->send();
+        Notification::make()->title('RU and EN examples saved')->success()->send();
     }
 
     public function publishProblem(int $problemId): void
@@ -188,7 +240,7 @@ class ModuleWorkspace extends Page
             'problems' => $problems,
             'ladders' => $ladders,
             'checklist' => $checklist,
-            'quickAddUrl' => url('/admin/quick-problem') . $this->selectedParamsQuery(),
+            'quickAddUrl' => url('/admin/quick-problem') . $this->selectedParamsQuery(['return' => 'module-workspace']),
             'contentStudioUrl' => url('/admin/content-studio') . $this->selectedParamsQuery(),
             'publicChapterUrl' => $selectedChapter ? route('chapter.show.simple', ['chapter' => $selectedChapter->slug, 'lang' => $this->selectedLang]) : null,
             'publicPracticeUrl' => $selectedChapter ? route('chapter.practice.simple', ['chapter' => $selectedChapter->slug, 'lang' => $this->selectedLang]) : null,
@@ -202,13 +254,25 @@ class ModuleWorkspace extends Page
     {
         return [
             'overview',
-            'theory-editor',
-            'examples-editor',
+            'theory',
+            'examples',
             'problems',
             'ladders',
-            'publish-checklist',
+            'checklist',
             'preview',
         ];
+    }
+
+    private function normalizeTab(string $tab): string
+    {
+        $tab = match ($tab) {
+            'theory-editor' => 'theory',
+            'examples-editor' => 'examples',
+            'publish-checklist' => 'checklist',
+            default => $tab,
+        };
+
+        return in_array($tab, $this->tabs(), true) ? $tab : 'overview';
     }
 
     private function syncSelectedChapter(?int $preferredChapterId = null): void
@@ -303,6 +367,21 @@ class ModuleWorkspace extends Page
         }
 
         ChapterText::query()->updateOrCreate($attributes, $updates);
+    }
+
+    private function saveEditorContent(string $lang, string $kind, string $value, string $message): void
+    {
+        if ($this->selectedChapterId === null) {
+            Notification::make()->title('Select chapter first')->warning()->send();
+            return;
+        }
+
+        $this->saveChapterContent($lang, $kind, $value);
+
+        Notification::make()
+            ->title($message)
+            ->success()
+            ->send();
     }
 
     private function usesTypedChapterText(): bool
@@ -681,7 +760,7 @@ class ModuleWorkspace extends Page
             ->send();
     }
 
-    private function selectedParamsQuery(): string
+    private function selectedParamsQuery(array $extra = []): string
     {
         $params = [];
         if ($this->selectedCourseId !== null) {
@@ -690,8 +769,10 @@ class ModuleWorkspace extends Page
         if ($this->selectedChapterId !== null) {
             $params['chapter_id'] = $this->selectedChapterId;
         }
+        $params['lang'] = $this->selectedLang;
+        $params['tab'] = $this->activeTab;
+        $params = array_merge($params, $extra);
 
         return $params === [] ? '' : ('?' . http_build_query($params));
     }
 }
-

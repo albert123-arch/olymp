@@ -1,4 +1,36 @@
 <x-filament-panels::page>
+    <style>
+        .module-workspace-editor {
+            min-height: 450px;
+            width: 100%;
+            resize: vertical;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .module-workspace-tab {
+            border-radius: 0.625rem 0.625rem 0 0;
+            border: 1px solid rgb(209 213 219);
+            border-bottom: 0;
+            padding: 0.625rem 0.875rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .module-workspace-tab-active {
+            background: rgb(var(--primary-600));
+            border-color: rgb(var(--primary-600));
+            color: white;
+        }
+
+        .module-workspace-preview {
+            min-height: 160px;
+            max-height: 520px;
+            overflow: auto;
+        }
+    </style>
+
     <div class="space-y-6">
         <div class="grid gap-4 md:grid-cols-3">
             <div>
@@ -56,18 +88,18 @@
                 @php
                     $labels = [
                         'overview' => 'Module Overview',
-                        'theory-editor' => 'Theory Editor',
-                        'examples-editor' => 'Examples Editor',
+                        'theory' => 'Theory',
+                        'examples' => 'Examples',
                         'problems' => 'Problems',
                         'ladders' => 'Ladders',
-                        'publish-checklist' => 'Publish Checklist',
+                        'checklist' => 'Publish Checklist',
                         'preview' => 'Preview',
                     ];
                 @endphp
                 <button
                     type="button"
                     wire:click="setActiveTab('{{ $tab }}')"
-                    class="px-3 py-1.5 text-sm rounded-md border {{ $activeTab === $tab ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300' }}"
+                    class="module-workspace-tab {{ $activeTab === $tab ? 'module-workspace-tab-active' : 'bg-white text-gray-700' }}"
                 >
                     {{ $labels[$tab] ?? $tab }}
                 </button>
@@ -140,46 +172,106 @@
                 </x-filament::section>
             @endif
 
-            @if ($activeTab === 'theory-editor')
+            @if ($activeTab === 'theory')
                 <x-filament::section>
-                    <h3 class="font-medium mb-3">Theory Editor</h3>
-                    <div class="grid gap-4 md:grid-cols-2">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                         <div>
-                            <label class="block text-sm font-medium mb-1">RU theory / notes</label>
-                            <textarea wire:model.defer="theoryRu" rows="14" class="fi-input block w-full rounded-lg border-gray-300 font-mono"></textarea>
+                            <h3 class="font-medium">Theory Editor</h3>
+                            <p class="text-sm text-gray-500">Edit RU and EN theory without leaving this chapter.</p>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">EN theory / notes</label>
-                            <textarea wire:model.defer="theoryEn" rows="14" class="fi-input block w-full rounded-lg border-gray-300 font-mono"></textarea>
-                        </div>
+                        <button type="button" wire:click="saveTheoryBoth" class="fi-btn fi-btn-size-sm fi-btn-color-primary">Save both</button>
                     </div>
-                    <div class="mt-3">
-                        <button type="button" wire:click="saveTheory" class="fi-btn fi-btn-size-sm fi-btn-color-primary">Save Theory</button>
+
+                    <div class="grid gap-5 xl:grid-cols-2">
+                        <div class="space-y-3 rounded-xl border p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <label class="block text-sm font-semibold">RU theory / notes</label>
+                                <div class="flex gap-2">
+                                    <button type="button" wire:click="$refresh" class="fi-btn fi-btn-size-xs fi-btn-color-gray">Preview</button>
+                                    <button type="button" wire:click="saveTheoryRu" class="fi-btn fi-btn-size-xs fi-btn-color-primary">Save RU</button>
+                                </div>
+                            </div>
+                            <textarea wire:model.defer="theoryRu" class="fi-input module-workspace-editor rounded-lg border-gray-300"></textarea>
+                            <div class="rounded-lg border bg-gray-50 p-4 module-workspace-preview">
+                                <div class="prose max-w-none math-content">
+                                    {!! $theoryRu !!}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-3 rounded-xl border p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <label class="block text-sm font-semibold">EN theory / notes</label>
+                                <div class="flex gap-2">
+                                    <button type="button" wire:click="$refresh" class="fi-btn fi-btn-size-xs fi-btn-color-gray">Preview</button>
+                                    <button type="button" wire:click="saveTheoryEn" class="fi-btn fi-btn-size-xs fi-btn-color-primary">Save EN</button>
+                                </div>
+                            </div>
+                            <textarea wire:model.defer="theoryEn" class="fi-input module-workspace-editor rounded-lg border-gray-300"></textarea>
+                            <div class="rounded-lg border bg-gray-50 p-4 module-workspace-preview">
+                                <div class="prose max-w-none math-content">
+                                    {!! $theoryEn !!}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </x-filament::section>
             @endif
 
-            @if ($activeTab === 'examples-editor')
+            @if ($activeTab === 'examples')
                 <x-filament::section>
-                    <h3 class="font-medium mb-3">Examples Editor</h3>
-                    <div class="grid gap-4 md:grid-cols-2">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                         <div>
-                            <label class="block text-sm font-medium mb-1">RU examples</label>
-                            <textarea wire:model.defer="examplesRu" rows="14" class="fi-input block w-full rounded-lg border-gray-300 font-mono"></textarea>
+                            <h3 class="font-medium">Examples Editor</h3>
+                            <p class="text-sm text-gray-500">Edit worked examples in both languages on the same screen.</p>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">EN examples</label>
-                            <textarea wire:model.defer="examplesEn" rows="14" class="fi-input block w-full rounded-lg border-gray-300 font-mono"></textarea>
-                        </div>
+                        <button type="button" wire:click="saveExamplesBoth" class="fi-btn fi-btn-size-sm fi-btn-color-primary">Save both</button>
                     </div>
-                    <div class="mt-3">
-                        <button type="button" wire:click="saveExamples" class="fi-btn fi-btn-size-sm fi-btn-color-primary">Save Examples</button>
+
+                    <div class="grid gap-5 xl:grid-cols-2">
+                        <div class="space-y-3 rounded-xl border p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <label class="block text-sm font-semibold">RU examples</label>
+                                <div class="flex gap-2">
+                                    <button type="button" wire:click="$refresh" class="fi-btn fi-btn-size-xs fi-btn-color-gray">Preview</button>
+                                    <button type="button" wire:click="saveExamplesRu" class="fi-btn fi-btn-size-xs fi-btn-color-primary">Save RU</button>
+                                </div>
+                            </div>
+                            <textarea wire:model.defer="examplesRu" class="fi-input module-workspace-editor rounded-lg border-gray-300"></textarea>
+                            <div class="rounded-lg border bg-gray-50 p-4 module-workspace-preview">
+                                <div class="prose max-w-none math-content">
+                                    {!! $examplesRu !!}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-3 rounded-xl border p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <label class="block text-sm font-semibold">EN examples</label>
+                                <div class="flex gap-2">
+                                    <button type="button" wire:click="$refresh" class="fi-btn fi-btn-size-xs fi-btn-color-gray">Preview</button>
+                                    <button type="button" wire:click="saveExamplesEn" class="fi-btn fi-btn-size-xs fi-btn-color-primary">Save EN</button>
+                                </div>
+                            </div>
+                            <textarea wire:model.defer="examplesEn" class="fi-input module-workspace-editor rounded-lg border-gray-300"></textarea>
+                            <div class="rounded-lg border bg-gray-50 p-4 module-workspace-preview">
+                                <div class="prose max-w-none math-content">
+                                    {!! $examplesEn !!}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </x-filament::section>
             @endif
 
             @if ($activeTab === 'problems')
                 <x-filament::section>
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div>
+                            <h3 class="font-medium">Problems</h3>
+                            <p class="text-sm text-gray-500">Manage this chapter without losing the selected course, chapter, or language.</p>
+                        </div>
+                        <a href="{{ $quickAddUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-primary">+ Quick Add Problem</a>
+                    </div>
+
                     <div class="flex flex-wrap items-end gap-2 mb-4">
                         <button type="button" wire:click="publishSelected" class="fi-btn fi-btn-size-sm fi-btn-color-success">Publish selected</button>
                         <button type="button" wire:click="unpublishSelected" class="fi-btn fi-btn-size-sm fi-btn-color-danger">Unpublish selected</button>
@@ -304,7 +396,7 @@
                 </x-filament::section>
             @endif
 
-            @if ($activeTab === 'publish-checklist')
+            @if ($activeTab === 'checklist')
                 <x-filament::section>
                     <h3 class="font-medium mb-3">Publish Checklist</h3>
                     <ul class="list-disc pl-5 text-sm space-y-1">
@@ -364,6 +456,10 @@
         }
         document.addEventListener('livewire:navigated', () => setTimeout(moduleWorkspaceTypesetMath, 120));
         document.addEventListener('DOMContentLoaded', () => setTimeout(moduleWorkspaceTypesetMath, 120));
+        document.addEventListener('livewire:init', () => {
+            if (window.Livewire && Livewire.hook) {
+                Livewire.hook('morph.updated', () => setTimeout(moduleWorkspaceTypesetMath, 120));
+            }
+        });
     </script>
 </x-filament-panels::page>
-

@@ -6,8 +6,11 @@
                     <h2 class="text-base font-semibold">Quick Problem Draft</h2>
                     <p class="text-sm text-gray-600">Create one problem with RU + EN texts under a single <code>problem_id</code>.</p>
                 </div>
-                <a href="{{ $contentStudioUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-gray">
+                <a href="{{ $backUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-gray">
+                    <span>&lt;- {{ $backLabel }}</span>
+                    <span class="hidden">
                     ← Back to Content Studio
+                    </span>
                 </a>
             </div>
         </x-filament::section>
@@ -199,4 +202,3 @@
         document.addEventListener('livewire:navigated', () => setTimeout(typesetQuickProblemMath, 100));
     </script>
 </x-filament-panels::page>
-

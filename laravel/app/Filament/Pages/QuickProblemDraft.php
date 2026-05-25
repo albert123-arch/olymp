@@ -57,12 +57,23 @@ class QuickProblemDraft extends Page
 
     public ?int $createdProblemId = null;
 
+    public string $returnTo = '';
+
+    public string $returnLang = 'ru';
+
+    public string $returnTab = 'problems';
+
     public function mount(): void
     {
         $courseId = request()->integer('course_id');
         $chapterId = request()->integer('chapter_id');
+        $lang = (string) request()->query('lang', 'ru');
+        $tab = (string) request()->query('tab', 'problems');
 
         $this->selectedCourseId = $courseId > 0 ? $courseId : $this->defaultCourseId();
+        $this->returnTo = (string) request()->query('return', '');
+        $this->returnLang = in_array($lang, ['ru', 'en'], true) ? $lang : 'ru';
+        $this->returnTab = $this->normalizeReturnTab($tab);
         $this->syncSelectedChapter($chapterId > 0 ? $chapterId : null);
         $this->refreshDefaults();
     }
@@ -194,6 +205,11 @@ class QuickProblemDraft extends Page
 
         Notification::make()->title('Problem saved')->success()->send();
 
+        if ($this->returnTo === 'module-workspace') {
+            $this->redirect($this->moduleWorkspaceUrl(), navigate: true);
+            return;
+        }
+
         $this->resetTextInputs();
         $this->selectedTagIds = [];
         $this->newTags = '';
@@ -208,8 +224,44 @@ class QuickProblemDraft extends Page
             'tags' => $this->tagOptions(),
             'warnings' => $this->collectWarnings(),
             'contentStudioUrl' => url('/admin/content-studio') . ($this->selectedChapterId ? ('?chapter_id=' . $this->selectedChapterId) : ''),
+            'backUrl' => $this->returnTo === 'module-workspace' ? $this->moduleWorkspaceUrl() : url('/admin/content-studio') . $this->contextQuery(),
+            'backLabel' => $this->returnTo === 'module-workspace' ? 'Back to Module Workspace' : 'Back to Content Studio',
             'languages' => $this->availableLangCodes(),
         ];
+    }
+
+    private function normalizeReturnTab(string $tab): string
+    {
+        $tab = match ($tab) {
+            'theory-editor' => 'theory',
+            'examples-editor' => 'examples',
+            'publish-checklist' => 'checklist',
+            default => $tab,
+        };
+
+        return in_array($tab, ['overview', 'theory', 'examples', 'problems', 'ladders', 'checklist', 'preview'], true)
+            ? $tab
+            : 'problems';
+    }
+
+    private function moduleWorkspaceUrl(): string
+    {
+        return url('/admin/module-workspace') . $this->contextQuery(['tab' => $this->returnTab]);
+    }
+
+    private function contextQuery(array $extra = []): string
+    {
+        $params = [];
+        if ($this->selectedCourseId !== null) {
+            $params['course_id'] = $this->selectedCourseId;
+        }
+        if ($this->selectedChapterId !== null) {
+            $params['chapter_id'] = $this->selectedChapterId;
+        }
+        $params['lang'] = $this->returnLang;
+        $params = array_merge($params, $extra);
+
+        return $params === [] ? '' : ('?' . http_build_query($params));
     }
 
     private function defaultCourseId(): ?int
@@ -477,4 +529,3 @@ class QuickProblemDraft extends Page
             ->all();
     }
 }
-
