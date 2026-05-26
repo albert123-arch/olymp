@@ -137,6 +137,23 @@ html[data-reader-theme] .badge.text-bg-light {
     color: var(--reader-muted) !important;
 }
 
+html[data-reader-theme] .btn-primary,
+html[data-reader-theme] .btn-outline-primary {
+    background-color: var(--reader-card) !important;
+    border-color: var(--reader-border) !important;
+    color: var(--reader-text) !important;
+    box-shadow: none !important;
+}
+
+html[data-reader-theme] .btn-primary:hover,
+html[data-reader-theme] .btn-primary:focus-visible,
+html[data-reader-theme] .btn-outline-primary:hover,
+html[data-reader-theme] .btn-outline-primary:focus-visible {
+    background-color: var(--reader-subtle) !important;
+    border-color: color-mix(in srgb, var(--reader-accent) 34%, var(--reader-border)) !important;
+    color: var(--reader-accent) !important;
+}
+
 .public-theme-toggle {
     border-radius: 999px;
     font-weight: 700;
@@ -729,6 +746,24 @@ body.reader-active footer {
 [data-reader-theme="light"] .reader-sidebar .reader-nav-link.reader-step-target .reader-nav-number,
 [data-reader-theme="light"] .reader-sidebar .reader-nav-link.reader-step-challenge .reader-nav-number {
     color: #111827;
+}
+
+[data-reader-theme="dark"] .reader-sidebar .reader-nav-link,
+[data-reader-theme="dark"] .reader-sidebar .reader-nav-link:hover,
+[data-reader-theme="dark"] .reader-sidebar .reader-nav-link.is-active,
+[data-reader-theme="dark"] .reader-sidebar .reader-nav-title,
+[data-reader-theme="dark"] .reader-sidebar .reader-nav-number,
+[data-reader-theme="dark"] .reader-sidebar .reader-nav-link.reader-step-warmup .reader-nav-number,
+[data-reader-theme="dark"] .reader-sidebar .reader-nav-link.reader-step-lemma .reader-nav-number,
+[data-reader-theme="dark"] .reader-sidebar .reader-nav-link.reader-step-direct .reader-nav-number,
+[data-reader-theme="dark"] .reader-sidebar .reader-nav-link.reader-step-mixed .reader-nav-number,
+[data-reader-theme="dark"] .reader-sidebar .reader-nav-link.reader-step-target .reader-nav-number,
+[data-reader-theme="dark"] .reader-sidebar .reader-nav-link.reader-step-challenge .reader-nav-number {
+    color: #dbe4ef;
+}
+
+[data-reader-theme="dark"] .reader-sidebar .reader-nav-meta {
+    color: #cbd5e1;
 }
 
 .reader-bottom-nav {
