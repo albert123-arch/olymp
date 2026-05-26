@@ -23,7 +23,7 @@
                     <div class="reader-sidebar-title">{{ __('public.practice') }}</div>
                     <nav class="reader-nav-list">
                         @foreach($readerItems as $item)
-                            <a class="reader-nav-link"
+                            <a class="reader-nav-link {{ $item['solved'] ? 'is-solved' : '' }}"
                                href="#{{ $item['id'] }}"
                                data-reader-nav-link>
                                 <span class="reader-nav-number">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>

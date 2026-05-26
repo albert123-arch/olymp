@@ -8,7 +8,7 @@
                     <div class="reader-sidebar-title">{{ __('public.steps_count', ['count' => $ladder['steps_count']]) }}</div>
                     <nav class="reader-nav-list">
                         @foreach($ladder['steps'] as $step)
-                            <a class="reader-nav-link {{ $step['step_type'] === 'target' ? 'reader-step-target' : '' }}"
+                            <a class="reader-nav-link reader-step-{{ $step['step_type'] }} {{ $step['step_type'] === 'target' ? 'reader-step-target' : '' }}"
                                href="#step-{{ $step['step_number'] }}"
                                data-reader-nav-link>
                                 <span class="reader-nav-number">{{ str_pad((string) $step['step_number'], 2, '0', STR_PAD_LEFT) }}</span>
@@ -85,7 +85,7 @@
                                     </a>
                                 </div>
                                 <div class="d-flex flex-wrap gap-1 justify-content-end reader-meta-desktop">
-                                    <span class="badge text-bg-light border">{{ $step['step_type_label'] }}</span>
+                                    <span class="badge reader-step-badge reader-step-{{ $step['step_type'] }}">{{ $step['step_type_label'] }}</span>
                                     <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">{{ $step['difficulty_stars'] }}</span>
                                     @auth
                                         <span class="badge {{ $step['problem']['is_solved'] ? 'text-bg-success' : 'text-bg-light border' }}">{{ $step['problem']['is_solved'] ? __('public.solved') : __('public.unsolved') }}</span>

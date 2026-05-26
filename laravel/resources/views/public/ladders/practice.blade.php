@@ -8,7 +8,7 @@
                     <div class="reader-sidebar-title">{{ __('public.ladder_practice') }}</div>
                     <nav class="reader-nav-list">
                         @foreach($ladder['steps'] as $step)
-                            <a class="reader-nav-link {{ $step['step_type'] === 'target' ? 'reader-step-target' : '' }}"
+                            <a class="reader-nav-link reader-step-{{ $step['step_type'] }} {{ $step['step_type'] === 'target' ? 'reader-step-target' : '' }}"
                                href="#step-{{ $step['step_number'] }}"
                                data-reader-nav-link>
                                 <span class="reader-nav-number">{{ str_pad((string) $step['step_number'], 2, '0', STR_PAD_LEFT) }}</span>
@@ -62,10 +62,10 @@
 
             <section class="row g-3">
                 @forelse($ladder['steps'] as $step)
-                    <div class="col-12" id="step-{{ $step['step_number'] }}" data-reader-target>
+                    <div class="col-12 {{ $step['step_type'] === 'target' ? 'reader-step-target-scope' : '' }}" id="step-{{ $step['step_number'] }}" data-reader-target>
                         <div class="reader-step-header">
                             <span class="badge text-bg-light border">{{ __('public.step') }} {{ $step['step_number'] }} / {{ count($ladder['steps']) }}</span>
-                            <span class="badge text-bg-light border">{{ $step['step_type_label'] }}</span>
+                            <span class="badge reader-step-badge reader-step-{{ $step['step_type'] }}">{{ $step['step_type_label'] }}</span>
                             <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">{{ $step['difficulty_stars'] }}</span>
                             @if($step['step_title'])
                                 <span class="small fw-semibold">{{ $step['step_title'] }}</span>
