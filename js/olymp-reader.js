@@ -1,6 +1,51 @@
 (function () {
     const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
+    const storageGet = function (key) {
+        try {
+            return localStorage.getItem(key);
+        } catch (error) {
+            return null;
+        }
+    };
+
+    const storageSet = function (key, value) {
+        try {
+            localStorage.setItem(key, value);
+        } catch (error) {
+            // Reader preferences are optional; keep the page usable if storage is blocked.
+        }
+    };
+
+    const readerLabels = function () {
+        const lang = (document.documentElement.lang || '').toLowerCase();
+        const isRu = lang.startsWith('ru');
+
+        return {
+            hideList: isRu ? '\u0421\u043A\u0440\u044B\u0442\u044C \u0441\u043F\u0438\u0441\u043E\u043A' : 'Hide list',
+            showList: isRu ? '\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u044C \u0441\u043F\u0438\u0441\u043E\u043A' : 'Show list',
+            light: isRu ? '\u0421\u0432\u0435\u0442\u043B\u0430\u044F' : 'Light',
+            dark: isRu ? '\u0422\u0435\u043C\u043D\u0430\u044F' : 'Dark',
+            theme: isRu ? '\u0422\u0435\u043C\u0430' : 'Theme'
+        };
+    };
+
+    const systemTheme = function () {
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+
+    const currentReaderTheme = function () {
+        return document.documentElement.dataset.readerTheme || storageGet('readerTheme') || systemTheme();
+    };
+
+    const setReaderTheme = function (theme, persist) {
+        const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
+        document.documentElement.dataset.readerTheme = normalizedTheme;
+        if (persist) {
+            storageSet('readerTheme', normalizedTheme);
+        }
+    };
+
     const typesetMath = function (scope) {
         if (window.MathJax && window.MathJax.typesetPromise) {
             window.MathJax.typesetPromise(scope ? [scope] : undefined);
@@ -175,10 +220,86 @@
         targets.forEach((target) => observer.observe(target));
     };
 
+    const setupReaderToolbar = function () {
+        const readerMain = document.querySelector('.reader-main');
+        if (!readerMain || readerMain.querySelector(':scope > .reader-toolbar')) {
+            return;
+        }
+
+        document.body.classList.add('reader-active');
+
+        const labels = readerLabels();
+        const shell = document.querySelector('.reader-shell');
+        const toolbar = document.createElement('div');
+        toolbar.className = 'reader-toolbar';
+
+        const themeButton = document.createElement('button');
+        themeButton.type = 'button';
+        themeButton.className = 'reader-toolbar-button reader-theme-toggle';
+        themeButton.setAttribute('aria-live', 'polite');
+
+        const updateThemeButton = function () {
+            const theme = currentReaderTheme();
+            themeButton.textContent = `${labels.theme}: ${theme === 'dark' ? labels.light : labels.dark}`;
+            themeButton.setAttribute('aria-label', theme === 'dark' ? labels.light : labels.dark);
+        };
+
+        themeButton.addEventListener('click', function () {
+            const nextTheme = currentReaderTheme() === 'dark' ? 'light' : 'dark';
+            setReaderTheme(nextTheme, true);
+            updateThemeButton();
+            typesetMath(document.body);
+        });
+
+        updateThemeButton();
+
+        if (shell && shell.querySelector('.reader-sidebar')) {
+            const sidebarButton = document.createElement('button');
+            sidebarButton.type = 'button';
+            sidebarButton.className = 'reader-toolbar-button reader-sidebar-toggle';
+
+            const updateSidebarButton = function () {
+                const isCollapsed = shell.classList.contains('is-sidebar-collapsed');
+                sidebarButton.textContent = isCollapsed ? labels.showList : labels.hideList;
+                sidebarButton.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+            };
+
+            const storedSidebarState = storageGet('readerSidebarCollapsed');
+            if (storedSidebarState === 'true') {
+                shell.classList.add('is-sidebar-collapsed');
+            }
+
+            sidebarButton.addEventListener('click', function () {
+                const isCollapsed = shell.classList.toggle('is-sidebar-collapsed');
+                storageSet('readerSidebarCollapsed', isCollapsed ? 'true' : 'false');
+                updateSidebarButton();
+            });
+
+            updateSidebarButton();
+            toolbar.appendChild(sidebarButton);
+        }
+
+        toolbar.appendChild(themeButton);
+        readerMain.prepend(toolbar);
+    };
+
     document.addEventListener('DOMContentLoaded', function () {
+        if (!storageGet('readerTheme')) {
+            setReaderTheme(systemTheme(), false);
+        }
+        setupReaderToolbar();
         setupActiveReaderNav();
         setTimeout(function () {
             typesetMath(document.body);
         }, 120);
     });
+
+    if (window.matchMedia) {
+        const colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        colorSchemeQuery.addEventListener?.('change', function () {
+            if (!storageGet('readerTheme')) {
+                setReaderTheme(systemTheme(), false);
+            }
+        });
+    }
 })();
