@@ -46,7 +46,7 @@
     --reader-purple: #c4b5fd;
     --reader-target: #fb7185;
     --reader-hint-bg: #1f1a0b;
-    --reader-solution-bg: #0c1f17;
+    --reader-solution-bg: #121b2a;
     --reader-teacher-bg: #1b1530;
     --reader-shadow: none;
     --reader-shadow-soft: none;
@@ -135,6 +135,44 @@ html[data-reader-theme] .badge.text-bg-light {
     background-color: var(--reader-subtle) !important;
     border-color: var(--reader-subtle-border) !important;
     color: var(--reader-muted) !important;
+}
+
+html[data-reader-theme] .content-html .card,
+html[data-reader-theme] .module-theory .card,
+html[data-reader-theme] .module-examples .card {
+    background-color: var(--reader-card) !important;
+    border: 1px solid var(--reader-border) !important;
+    color: var(--reader-text) !important;
+    box-shadow: var(--reader-shadow-soft) !important;
+}
+
+html[data-reader-theme] .content-html .card-body,
+html[data-reader-theme] .module-theory .card-body,
+html[data-reader-theme] .module-examples .card-body {
+    color: var(--reader-text) !important;
+}
+
+html[data-reader-theme] .content-html .alert-light,
+html[data-reader-theme] .module-theory .alert-light,
+html[data-reader-theme] .module-examples .alert-light {
+    background-color: var(--reader-subtle) !important;
+    border-color: var(--reader-border) !important;
+    color: var(--reader-text) !important;
+}
+
+html[data-reader-theme] .content-html h1,
+html[data-reader-theme] .content-html h2,
+html[data-reader-theme] .content-html h3,
+html[data-reader-theme] .content-html h4,
+html[data-reader-theme] .module-theory h1,
+html[data-reader-theme] .module-theory h2,
+html[data-reader-theme] .module-theory h3,
+html[data-reader-theme] .module-theory h4,
+html[data-reader-theme] .module-examples h1,
+html[data-reader-theme] .module-examples h2,
+html[data-reader-theme] .module-examples h3,
+html[data-reader-theme] .module-examples h4 {
+    color: var(--reader-text) !important;
 }
 
 html[data-reader-theme] .btn-primary,
@@ -764,6 +802,22 @@ body.reader-active footer {
 
 [data-reader-theme="dark"] .reader-sidebar .reader-nav-meta {
     color: #cbd5e1;
+}
+
+[data-reader-theme="dark"] .reader-icon-button.btn-success,
+[data-reader-theme="dark"] [data-action="toggle-solved"].btn-success,
+[data-reader-theme="dark"] [data-problem-action="toggle-solved"].btn-success {
+    background-color: #14532d !important;
+    border-color: #166534 !important;
+    color: #bbf7d0 !important;
+}
+
+[data-reader-theme="dark"] .reader-icon-button.btn-warning,
+[data-reader-theme="dark"] [data-action="toggle-bookmark"].btn-warning,
+[data-reader-theme="dark"] [data-problem-action="toggle-bookmark"].btn-warning {
+    background-color: #713f12 !important;
+    border-color: #92400e !important;
+    color: #fde68a !important;
 }
 
 .reader-bottom-nav {
