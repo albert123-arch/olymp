@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProblemLadderResource\Pages;
 use App\Filament\Resources\ProblemLadderResource\RelationManagers\LadderTextsRelationManager;
+use App\Filament\Resources\ProblemLadderResource\RelationManagers\StepsRelationManager;
 use App\Models\GradeLevel;
 use App\Models\ProblemLadder;
 use Filament\Forms;
@@ -104,6 +105,7 @@ class ProblemLadderResource extends Resource
     {
         return [
             LadderTextsRelationManager::class,
+            StepsRelationManager::class,
         ];
     }
 }
