@@ -46,6 +46,23 @@
         }
     };
 
+    const updateThemeButtons = function () {
+        const labels = readerLabels();
+        const theme = currentReaderTheme();
+        document.querySelectorAll('[data-public-theme-toggle], [data-reader-theme-toggle]').forEach(function (button) {
+            const label = button.querySelector('[data-public-theme-label]');
+            const isReaderButton = button.hasAttribute('data-reader-theme-toggle');
+            const nextLabel = theme === 'dark' ? labels.light : labels.dark;
+            const buttonText = isReaderButton ? `${labels.theme}: ${nextLabel}` : nextLabel;
+            if (label) {
+                label.textContent = buttonText;
+            } else {
+                button.textContent = buttonText;
+            }
+            button.setAttribute('aria-label', nextLabel);
+        });
+    };
+
     const typesetMath = function (scope) {
         if (window.MathJax && window.MathJax.typesetPromise) {
             window.MathJax.typesetPromise(scope ? [scope] : undefined);
@@ -237,21 +254,8 @@
         themeButton.type = 'button';
         themeButton.className = 'reader-toolbar-button reader-theme-toggle';
         themeButton.setAttribute('aria-live', 'polite');
-
-        const updateThemeButton = function () {
-            const theme = currentReaderTheme();
-            themeButton.textContent = `${labels.theme}: ${theme === 'dark' ? labels.light : labels.dark}`;
-            themeButton.setAttribute('aria-label', theme === 'dark' ? labels.light : labels.dark);
-        };
-
-        themeButton.addEventListener('click', function () {
-            const nextTheme = currentReaderTheme() === 'dark' ? 'light' : 'dark';
-            setReaderTheme(nextTheme, true);
-            updateThemeButton();
-            typesetMath(document.body);
-        });
-
-        updateThemeButton();
+        themeButton.setAttribute('data-reader-theme-toggle', '');
+        themeButton.innerHTML = '<span data-public-theme-label></span>';
 
         if (shell && shell.querySelector('.reader-sidebar')) {
             const sidebarButton = document.createElement('button');
@@ -280,13 +284,30 @@
         }
 
         toolbar.appendChild(themeButton);
-        readerMain.prepend(toolbar);
+
+        if (toolbar.children.length > 0) {
+            readerMain.prepend(toolbar);
+            updateThemeButtons();
+        }
     };
 
     document.addEventListener('DOMContentLoaded', function () {
         if (!storageGet('readerTheme')) {
             setReaderTheme(systemTheme(), false);
         }
+        updateThemeButtons();
+        document.addEventListener('click', function (event) {
+            const themeButton = event.target.closest('[data-public-theme-toggle], [data-reader-theme-toggle]');
+            if (!themeButton) {
+                return;
+            }
+
+            event.preventDefault();
+            const nextTheme = currentReaderTheme() === 'dark' ? 'light' : 'dark';
+            setReaderTheme(nextTheme, true);
+            updateThemeButtons();
+            typesetMath(document.body);
+        });
         setupReaderToolbar();
         setupActiveReaderNav();
         setTimeout(function () {
@@ -299,6 +320,7 @@
         colorSchemeQuery.addEventListener?.('change', function () {
             if (!storageGet('readerTheme')) {
                 setReaderTheme(systemTheme(), false);
+                updateThemeButtons();
             }
         });
     }

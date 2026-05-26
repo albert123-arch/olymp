@@ -68,6 +68,81 @@
     min-width: 0;
 }
 
+html[data-reader-theme] body {
+    background: var(--reader-bg) !important;
+    color: var(--reader-text) !important;
+}
+
+html[data-reader-theme] a {
+    color: var(--reader-accent);
+}
+
+html[data-reader-theme] .site-nav {
+    background: color-mix(in srgb, var(--reader-card) 91%, transparent);
+    border-bottom-color: var(--reader-border);
+}
+
+html[data-reader-theme] .navbar-brand,
+html[data-reader-theme] .nav-link {
+    color: var(--reader-text);
+}
+
+html[data-reader-theme] .nav-link:hover,
+html[data-reader-theme] .nav-link.active {
+    color: var(--reader-accent);
+}
+
+html[data-reader-theme] .navbar-toggler {
+    border-color: var(--reader-border);
+}
+
+html[data-reader-theme] .hero-panel,
+html[data-reader-theme] .content-panel,
+html[data-reader-theme] .surface-card {
+    background: color-mix(in srgb, var(--reader-card) 94%, transparent);
+    border-color: var(--reader-border);
+    box-shadow: var(--reader-shadow-soft);
+    color: var(--reader-text);
+}
+
+html[data-reader-theme] .hero-figure {
+    background: linear-gradient(135deg, var(--reader-subtle), color-mix(in srgb, var(--reader-accent) 7%, var(--reader-card)));
+    border-left-color: var(--reader-border);
+}
+
+html[data-reader-theme] .text-secondary,
+html[data-reader-theme] .text-muted {
+    color: var(--reader-muted) !important;
+}
+
+html[data-reader-theme] .btn-outline-secondary,
+html[data-reader-theme] .btn-light,
+html[data-reader-theme] .form-control,
+html[data-reader-theme] .form-select {
+    background-color: var(--reader-card);
+    border-color: var(--reader-border);
+    color: var(--reader-text);
+}
+
+html[data-reader-theme] .btn-outline-secondary:hover,
+html[data-reader-theme] .btn-light:hover {
+    background-color: var(--reader-subtle);
+    border-color: color-mix(in srgb, var(--reader-accent) 35%, var(--reader-border));
+    color: var(--reader-accent);
+}
+
+html[data-reader-theme] .badge.text-bg-light {
+    background-color: var(--reader-subtle) !important;
+    border-color: var(--reader-subtle-border) !important;
+    color: var(--reader-muted) !important;
+}
+
+.public-theme-toggle {
+    border-radius: 999px;
+    font-weight: 700;
+    min-width: 72px;
+}
+
 body.reader-active {
     background: var(--reader-bg) !important;
     color: var(--reader-text);

@@ -176,6 +176,14 @@
                             </form>
                         </li>
                     @endguest
+                    <li class="nav-item">
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary public-theme-toggle"
+                                data-public-theme-toggle
+                                aria-label="Theme">
+                            <span data-public-theme-label>Theme</span>
+                        </button>
+                    </li>
                     <li class="nav-item ms-lg-2">
                         <div class="btn-group btn-group-sm" role="group" aria-label="Language switcher">
                             @foreach($availableLanguages as $language)
