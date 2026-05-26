@@ -717,6 +717,20 @@ body.reader-active footer {
     border-color: color-mix(in srgb, var(--reader-target) 30%, var(--reader-border));
 }
 
+[data-reader-theme="light"] .reader-sidebar .reader-nav-link,
+[data-reader-theme="light"] .reader-sidebar .reader-nav-link:hover,
+[data-reader-theme="light"] .reader-sidebar .reader-nav-link.is-active,
+[data-reader-theme="light"] .reader-sidebar .reader-nav-title,
+[data-reader-theme="light"] .reader-sidebar .reader-nav-number,
+[data-reader-theme="light"] .reader-sidebar .reader-nav-link.reader-step-warmup .reader-nav-number,
+[data-reader-theme="light"] .reader-sidebar .reader-nav-link.reader-step-lemma .reader-nav-number,
+[data-reader-theme="light"] .reader-sidebar .reader-nav-link.reader-step-direct .reader-nav-number,
+[data-reader-theme="light"] .reader-sidebar .reader-nav-link.reader-step-mixed .reader-nav-number,
+[data-reader-theme="light"] .reader-sidebar .reader-nav-link.reader-step-target .reader-nav-number,
+[data-reader-theme="light"] .reader-sidebar .reader-nav-link.reader-step-challenge .reader-nav-number {
+    color: #111827;
+}
+
 .reader-bottom-nav {
     align-items: center;
     display: flex;
