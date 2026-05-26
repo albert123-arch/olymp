@@ -15,6 +15,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class PublicPageController extends Controller
@@ -995,6 +996,7 @@ class PublicPageController extends Controller
             'hint_html' => $this->normalizeMathHtml($text?->hint_html),
             'solution_html' => $this->normalizeMathHtml($text?->solution_html),
             'teacher_note_html' => $this->normalizeMathHtml($text?->teacher_note_html),
+            'media' => $this->problemMediaData($problem, $lang),
             'grade_badges' => $this->gradeBadges($problem->relationLoaded('gradeLevels') ? $problem->gradeLevels : collect(), $lang),
             'difficulty' => $difficultyLevel,
             'difficulty_label' => $this->difficultyLabel($difficultyLevel),
@@ -1049,6 +1051,81 @@ class PublicPageController extends Controller
             'show_url' => route('ladders.show', ['ladder' => $ladder->slug, 'lang' => $lang]),
             'practice_url' => route('ladders.practice', ['ladder' => $ladder->slug, 'lang' => $lang]),
         ];
+    }
+
+    private function problemMediaData(Problem $problem, string $lang): array
+    {
+        $groups = [
+            'statement' => [],
+            'hint' => [],
+            'solution' => [],
+            'extra' => [],
+        ];
+
+        if (! $problem->relationLoaded('media')) {
+            return $groups;
+        }
+
+        foreach ($problem->media as $media) {
+            if (isset($media->is_published) && ! (bool) $media->is_published) {
+                continue;
+            }
+
+            $mediaLang = trim((string) ($media->lang ?? ''));
+            if ($mediaLang !== '' && ! in_array($mediaLang, [$lang, 'all', '*'], true)) {
+                continue;
+            }
+
+            $item = $this->problemMediaItemData($media, $lang);
+            if ($item === null) {
+                continue;
+            }
+
+            $role = mb_strtolower(trim((string) ($media->role ?? 'statement')), 'UTF-8');
+            $group = match ($role) {
+                'hint' => 'hint',
+                'solution', 'answer' => 'solution',
+                'extra', 'teacher', 'teacher_note' => 'extra',
+                default => 'statement',
+            };
+
+            $groups[$group][] = $item;
+        }
+
+        return $groups;
+    }
+
+    private function problemMediaItemData(mixed $media, string $lang): ?array
+    {
+        $path = trim((string) ($media->file_path ?? ''));
+        if ($path === '') {
+            return null;
+        }
+
+        $text = $media->relationLoaded('texts') ? $this->resolveText($media->texts, $lang) : null;
+
+        return [
+            'id' => (int) $media->id,
+            'role' => (string) ($media->role ?? ''),
+            'url' => $this->mediaUrl($path),
+            'name' => $media->original_name ?: basename($path),
+            'mime_type' => (string) ($media->mime_type ?? ''),
+            'caption' => $this->normalizeMathHtml($text?->caption_html),
+            'alt' => $text?->alt_text ?: ($media->original_name ?: ''),
+        ];
+    }
+
+    private function mediaUrl(string $path): string
+    {
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/')) {
+            return $path;
+        }
+
+        if (str_starts_with($path, 'storage/')) {
+            return asset($path);
+        }
+
+        return Storage::url($path);
     }
 
     private function ladderPageData(ProblemLadder $ladder, string $lang, array $interactionState): array

@@ -1,0 +1,420 @@
+:root {
+    --reader-paper: #fbf7ef;
+    --reader-card: #fffdf8;
+    --reader-border: #d9e5ee;
+    --reader-ink: #17324a;
+    --reader-muted: #66768a;
+    --reader-blue: #2563eb;
+    --reader-blue-soft: #eef6ff;
+    --reader-teal: #0f766e;
+    --reader-shadow: 0 14px 38px rgba(18, 58, 82, 0.08);
+}
+
+.reader-shell,
+.reader-main,
+.reader-sidebar,
+.reader-card,
+.reader-statement,
+.reader-accordion-content,
+.problem-card,
+.problem-content,
+.content-html {
+    min-width: 0;
+}
+
+.min-w-0 {
+    min-width: 0;
+}
+
+.reader-shell {
+    display: grid;
+    grid-template-columns: minmax(280px, 310px) minmax(0, 900px);
+    gap: 32px;
+    align-items: start;
+    justify-content: center;
+}
+
+.reader-main {
+    width: 100%;
+    max-width: 900px;
+}
+
+.reader-sidebar {
+    position: sticky;
+    top: 92px;
+    align-self: start;
+}
+
+.reader-sidebar-card {
+    background: rgba(255, 253, 248, 0.96);
+    border: 1px solid var(--reader-border);
+    border-radius: 14px;
+    box-shadow: var(--reader-shadow);
+    padding: 14px;
+    max-height: calc(100vh - 120px);
+    overflow: auto;
+}
+
+.reader-sidebar-title {
+    color: var(--reader-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.reader-nav-list {
+    display: grid;
+    gap: 6px;
+}
+
+.reader-nav-link {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    color: var(--reader-ink);
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 9px 10px;
+}
+
+.reader-nav-link:hover,
+.reader-nav-link.is-active {
+    background: var(--reader-blue-soft);
+    border-color: rgba(37, 99, 235, 0.2);
+}
+
+.reader-nav-number {
+    color: var(--reader-blue);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.reader-nav-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.reader-nav-meta {
+    color: var(--reader-muted);
+    display: block;
+    font-size: 0.72rem;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.reader-chip-nav {
+    display: none;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px 2px 12px;
+    scrollbar-width: thin;
+}
+
+.reader-chip {
+    flex: 0 0 auto;
+    border: 1px solid var(--reader-border);
+    border-radius: 999px;
+    background: rgba(255, 253, 248, 0.96);
+    color: var(--reader-ink);
+    font-weight: 700;
+    min-width: 44px;
+    padding: 8px 12px;
+    text-align: center;
+    text-decoration: none;
+}
+
+.reader-chip:hover,
+.reader-chip.is-active {
+    background: var(--reader-blue);
+    border-color: var(--reader-blue);
+    color: #fff;
+}
+
+.reader-intro {
+    background: rgba(255, 253, 248, 0.96);
+}
+
+.reader-card {
+    background: var(--reader-card);
+    border-radius: 14px;
+    scroll-margin-top: 96px;
+}
+
+.reader-card-header {
+    align-items: flex-start;
+    display: flex;
+    gap: 14px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.reader-title-block {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.reader-mobile-kicker {
+    color: var(--reader-blue);
+    display: none;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.reader-number-badge {
+    font-variant-numeric: tabular-nums;
+}
+
+.reader-problem-title {
+    overflow-wrap: anywhere;
+}
+
+.reader-meta-actions {
+    align-items: center;
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: flex-end;
+    max-width: 46%;
+}
+
+.reader-icon-button {
+    min-height: 30px;
+    min-width: 32px;
+}
+
+.reader-statement {
+    background: linear-gradient(180deg, #f4f9ff, #f8fbff);
+    border: 1px solid #d7e9fb;
+    border-radius: 12px;
+    color: var(--reader-ink);
+    font-size: 1.02rem;
+    line-height: 1.72;
+    overflow-wrap: anywhere;
+    padding: 16px 18px;
+}
+
+.reader-accordion-content {
+    background: #fff;
+    border: 1px solid var(--reader-border);
+    border-radius: 12px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+    padding: 14px 16px;
+}
+
+.reader-accordion-toggle {
+    color: var(--reader-ink);
+    font-weight: 700;
+    min-height: 44px;
+    text-align: left;
+}
+
+.reader-card-footer {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.reader-solution-button {
+    color: var(--reader-teal);
+    font-weight: 700;
+}
+
+.reader-details {
+    border-top: 1px solid rgba(217, 229, 238, 0.75);
+    color: var(--reader-muted);
+    display: none;
+    font-size: 0.88rem;
+    padding-top: 10px;
+}
+
+.reader-details summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.reader-details-body {
+    display: grid;
+    gap: 5px;
+    padding-top: 8px;
+}
+
+.reader-step-header {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.reader-step-target {
+    border-color: rgba(15, 118, 110, 0.35);
+    box-shadow: 0 0 0 1px rgba(15, 118, 110, 0.08), var(--reader-shadow);
+}
+
+.reader-bottom-nav {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.problem-media {
+    margin: 18px 0;
+}
+
+.problem-media-frame {
+    background: #fff;
+    border: 1px solid var(--reader-border);
+    border-radius: 12px;
+    overflow-x: auto;
+    padding: 10px;
+}
+
+.problem-media img {
+    display: block;
+    height: auto;
+    margin-inline: auto;
+    max-width: 100%;
+}
+
+.media-caption {
+    color: var(--reader-muted);
+    font-size: 0.88rem;
+    margin-top: 8px;
+    text-align: center;
+}
+
+mjx-container {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.reader-statement,
+.reader-accordion-content,
+.problem-content {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 1199.98px) {
+    .reader-shell {
+        display: block;
+    }
+
+    .reader-sidebar {
+        display: none;
+    }
+
+    .reader-main {
+        margin-inline: auto;
+        max-width: 900px;
+    }
+
+    .reader-chip-nav {
+        display: flex;
+    }
+
+    .reader-meta-actions {
+        max-width: 58%;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .reader-card {
+        border-radius: 12px;
+    }
+
+    .reader-card-header {
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .reader-mobile-kicker {
+        display: block;
+    }
+
+    .reader-number-badge,
+    .reader-source-desktop,
+    .reader-meta-desktop,
+    .reader-open-link {
+        display: none !important;
+    }
+
+    .reader-problem-title {
+        font-size: 1rem;
+        line-height: 1.35;
+    }
+
+    .reader-meta-actions {
+        justify-content: flex-start;
+        margin-top: 10px;
+        max-width: 100%;
+    }
+
+    .reader-tag-chip {
+        max-width: calc(100vw - 160px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .reader-difficulty {
+        font-size: 0.72rem;
+    }
+
+    .reader-statement {
+        font-size: 0.98rem;
+        line-height: 1.65;
+        padding: 14px;
+    }
+
+    .reader-accordion-content {
+        padding: 13px;
+    }
+
+    .reader-card-footer {
+        justify-content: flex-start;
+    }
+
+    .reader-details {
+        display: block;
+    }
+
+    .reader-chip-nav {
+        margin-inline: -4px;
+        position: sticky;
+        top: 65px;
+        z-index: 8;
+        background: rgba(245, 249, 252, 0.94);
+        backdrop-filter: blur(10px);
+    }
+
+    .reader-bottom-nav {
+        background: rgba(255, 253, 248, 0.96);
+        border: 1px solid var(--reader-border);
+        border-radius: 999px;
+        bottom: 12px;
+        box-shadow: 0 8px 24px rgba(18, 58, 82, 0.14);
+        padding: 8px 12px;
+        position: sticky;
+        z-index: 9;
+    }
+
+    .content-panel.reader-intro,
+    .content-panel.reader-filter {
+        padding: 1rem !important;
+    }
+}
