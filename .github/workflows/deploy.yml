@@ -14,40 +14,38 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy changed files by FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./
-          server-dir: ./
-          dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/.github/**
-            **/.env
-            **/.env.*
-            **/node_modules/**
-            laravel/.env
-            laravel/storage/**
-            laravel/bootstrap/cache/*.php
-            **/*.sql
-            **/*.sql.gz
-            **/*.zip
-            **/*.tar
-            **/*.tar.gz
-            **/composer-setup.php
-            **/composer.phar
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
 
-            laravel/vendor/**
-            laravel/vendor/**/*
-            laravel/storage/logs/**
-            laravel/storage/logs/**/*
-            laravel/storage/framework/cache/**
-            laravel/storage/framework/cache/**/*
-            laravel/storage/framework/sessions/**
-            laravel/storage/framework/sessions/**/*
-            laravel/storage/framework/views/**
-            laravel/storage/framework/views/**/*
+      - name: Deploy changed files by FTP with lftp
+        run: |
+          lftp -u "${{ secrets.FTP_USERNAME }}","${{ secrets.FTP_PASSWORD }}" "${{ secrets.FTP_SERVER }}" <<EOF
+          set ftp:ssl-allow no
+          set net:timeout 30
+          set net:max-retries 2
+          set net:reconnect-interval-base 5
+
+          mirror -R ./ ./ \
+            --verbose \
+            --only-newer \
+            --parallel=2 \
+            --exclude-glob .git/** \
+            --exclude-glob .git* \
+            --exclude-glob .github/** \
+            --exclude-glob **/.env \
+            --exclude-glob **/.env.* \
+            --exclude-glob **/node_modules/** \
+            --exclude-glob laravel/.env \
+            --exclude-glob laravel/vendor/** \
+            --exclude-glob laravel/storage/** \
+            --exclude-glob laravel/bootstrap/cache/*.php \
+            --exclude-glob **/*.sql \
+            --exclude-glob **/*.sql.gz \
+            --exclude-glob **/*.zip \
+            --exclude-glob **/*.tar \
+            --exclude-glob **/*.tar.gz \
+            --exclude-glob **/composer-setup.php \
+            --exclude-glob **/composer.phar
+
+          bye
+          EOF
