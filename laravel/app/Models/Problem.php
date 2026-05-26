@@ -19,6 +19,13 @@ class Problem extends Model
         'problem_type',
         'sort_order',
         'is_published',
+        'source_name',
+        'source_year',
+        'source_round',
+        'source_grade',
+        'source_problem_number',
+        'source_url',
+        'source_note',
     ];
 
     protected $casts = [
@@ -26,6 +33,7 @@ class Problem extends Model
         'difficulty' => 'integer',
         'sort_order' => 'integer',
         'is_published' => 'boolean',
+        'source_year' => 'integer',
     ];
 
     public function chapter(): BelongsTo
@@ -48,6 +56,14 @@ class Problem extends Model
         return $this->belongsToMany(Tag::class, 'problem_tags');
     }
 
+    public function gradeLevels(): BelongsToMany
+    {
+        return $this->belongsToMany(GradeLevel::class, 'problem_grade_levels')
+            ->withPivot('is_primary')
+            ->withTimestamps()
+            ->orderBy('grade_number');
+    }
+
     public function ladderSteps(): HasMany
     {
         return $this->hasMany(ProblemLadderStep::class);
@@ -61,5 +77,18 @@ class Problem extends Model
     public function bookmarks(): HasMany
     {
         return $this->hasMany(Bookmark::class);
+    }
+
+    public function getSourceCompactAttribute(): ?string
+    {
+        $separator = ' '."\u{00B7}".' ';
+        $parts = array_filter([
+            $this->source_name,
+            $this->source_year,
+            $this->source_grade ? 'Grade '.$this->source_grade : null,
+            $this->source_problem_number ? 'Problem '.$this->source_problem_number : null,
+        ]);
+
+        return $parts === [] ? null : implode($separator, $parts);
     }
 }

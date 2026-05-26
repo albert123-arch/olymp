@@ -9,6 +9,7 @@ use App\Filament\Resources\ProblemTextResource;
 use App\Models\Chapter;
 use App\Models\ChapterText;
 use App\Models\Course;
+use App\Models\GradeLevel;
 use App\Models\Language;
 use App\Models\Problem;
 use App\Models\ProblemLadder;
@@ -59,6 +60,9 @@ class ModuleWorkspace extends Page
     public array $selectedProblemIds = [];
     public ?int $bulkDifficulty = null;
     public ?int $bulkSortStart = null;
+    public ?int $selectedGradeFilter = null;
+    /** @var array<int> */
+    public array $bulkGradeIds = [];
 
     public function mount(): void
     {
@@ -218,6 +222,31 @@ class ModuleWorkspace extends Page
         Notification::make()->title('Sort order updated')->success()->send();
     }
 
+    public function assignGradesSelected(): void
+    {
+        if ($this->selectedChapterId === null || empty($this->selectedProblemIds) || empty($this->bulkGradeIds)) {
+            Notification::make()->title('Select problems and grades')->warning()->send();
+            return;
+        }
+
+        if (! Schema::hasTable('grade_levels')) {
+            Notification::make()->title('Grade tables are not installed yet')->warning()->send();
+            return;
+        }
+
+        $gradeIds = collect($this->bulkGradeIds)->map(fn ($id) => (int) $id)->filter()->unique()->values()->all();
+        $problems = Problem::query()
+            ->where('chapter_id', $this->selectedChapterId)
+            ->whereIn('id', $this->selectedProblemIds)
+            ->get();
+
+        foreach ($problems as $problem) {
+            $problem->gradeLevels()->syncWithoutDetaching($gradeIds);
+        }
+
+        Notification::make()->title('Grades assigned')->success()->send();
+    }
+
     protected function getViewData(): array
     {
         $courses = Course::query()->with('texts')->orderBy('sort_order')->orderBy('id')->get();
@@ -240,6 +269,7 @@ class ModuleWorkspace extends Page
             'problems' => $problems,
             'ladders' => $ladders,
             'checklist' => $checklist,
+            'gradeOptions' => $this->gradeOptions(),
             'quickAddUrl' => url('/admin/quick-problem') . $this->selectedParamsQuery(['return' => 'module-workspace']),
             'contentStudioUrl' => url('/admin/content-studio') . $this->selectedParamsQuery(),
             'publicChapterUrl' => $selectedChapter ? route('chapter.show.simple', ['chapter' => $selectedChapter->slug, 'lang' => $this->selectedLang]) : null,
@@ -309,12 +339,58 @@ class ModuleWorkspace extends Page
             return new EloquentCollection();
         }
 
+        $relations = ['texts'];
+        if (Schema::hasTable('grade_levels')) {
+            $relations[] = 'gradeLevels';
+        }
+
         return Chapter::query()
             ->where('course_id', $this->selectedCourseId)
-            ->with('texts')
+            ->with($relations)
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function gradeOptions(): array
+    {
+        if (! Schema::hasTable('grade_levels')) {
+            return [];
+        }
+
+        return GradeLevel::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('grade_number')
+            ->get()
+            ->mapWithKeys(fn (GradeLevel $grade): array => [(int) $grade->id => $grade->title_en.' / '.$grade->title_ru])
+            ->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function problemWorkspaceRelations(): array
+    {
+        $relations = ['texts', 'tags.texts'];
+
+        if (Schema::hasTable('grade_levels')) {
+            $relations[] = 'gradeLevels';
+        }
+
+        return $relations;
+    }
+
+    private function gradeLabels(Collection $grades, string $lang): string
+    {
+        return $grades
+            ->sortBy('grade_number')
+            ->map(fn (GradeLevel $grade): string => $lang === 'ru' ? $grade->title_ru : $grade->title_en)
+            ->filter()
+            ->implode(', ');
     }
 
     private function loadChapterEditorValues(): void
@@ -505,6 +581,9 @@ class ModuleWorkspace extends Page
         $texts = $chapter->texts;
         $ru = $texts->firstWhere('lang', 'ru');
         $en = $texts->firstWhere('lang', 'en');
+        $recommendedGrades = Schema::hasTable('grade_levels')
+            ? $this->gradeLabels($chapter->relationLoaded('gradeLevels') ? $chapter->gradeLevels : $chapter->gradeLevels()->get(), $this->selectedLang)
+            : '';
         if ($this->usesTypedChapterText()) {
             $ruTheory = $this->fetchTypedChapterContent((int) $chapter->id, 'ru', 'notes');
             $enTheory = $this->fetchTypedChapterContent((int) $chapter->id, 'en', 'notes');
@@ -538,6 +617,7 @@ class ModuleWorkspace extends Page
             'missing_translations_count' => collect($checklist['warnings'])->filter(fn (array $w): bool => str_contains($w['key'], 'missing'))->count(),
             'mathjax_warnings_count' => collect($checklist['warnings'])->filter(fn (array $w): bool => str_contains($w['key'], 'mathjax') || str_contains($w['key'], 'command'))->count(),
             'encoding_warnings_count' => collect($checklist['warnings'])->filter(fn (array $w): bool => str_contains($w['key'], 'encoding'))->count(),
+            'recommended_grades' => $recommendedGrades,
         ];
     }
 
@@ -551,8 +631,14 @@ class ModuleWorkspace extends Page
             ->where('chapter_id', $chapter->id)
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->with(['texts', 'tags.texts'])
+            ->with($this->problemWorkspaceRelations())
             ->get();
+
+        if ($this->selectedGradeFilter !== null && Schema::hasTable('grade_levels')) {
+            $problems = $problems
+                ->filter(fn (Problem $problem): bool => $problem->gradeLevels->contains('id', $this->selectedGradeFilter))
+                ->values();
+        }
 
         return $problems->map(function (Problem $problem): array {
             $ruText = $problem->texts->firstWhere('lang', 'ru');
@@ -577,6 +663,8 @@ class ModuleWorkspace extends Page
                 'has_ru' => $ruText !== null && filled($ruText->statement_html),
                 'has_en' => $enText !== null && filled($enText->statement_html),
                 'tags' => $tags,
+                'grades' => Schema::hasTable('grade_levels') ? $this->gradeLabels($problem->gradeLevels ?? collect(), $this->selectedLang) : '',
+                'source' => $problem->source_compact,
                 'sort_order' => (int) ($problem->sort_order ?? 0),
                 'statement_html' => (string) ($selectedText?->statement_html ?? ''),
                 'edit_problem_url' => ProblemResource::getUrl('edit', ['record' => $problem]),
@@ -596,9 +684,14 @@ class ModuleWorkspace extends Page
             return [];
         }
 
+        $ladderRelations = ['texts.language', 'steps'];
+        if (Schema::hasTable('grade_levels')) {
+            $ladderRelations[] = 'gradeLevels';
+        }
+
         $ladders = ProblemLadder::query()
             ->where('chapter_id', $chapter->id)
-            ->with(['texts.language', 'steps'])
+            ->with($ladderRelations)
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
@@ -617,6 +710,7 @@ class ModuleWorkspace extends Page
                 'steps_count' => (int) $ladder->steps->count(),
                 'has_ru' => $hasRu,
                 'has_en' => $hasEn,
+                'grades' => Schema::hasTable('grade_levels') ? $this->gradeLabels($ladder->gradeLevels ?? collect(), $this->selectedLang) : '',
                 'missing_translation_warning' => (! $hasRu || ! $hasEn),
                 'edit_url' => ProblemLadderResource::getUrl('edit', ['record' => $ladder]),
             ];

@@ -149,6 +149,7 @@ class PublicPageController extends Controller
         $lang = $this->setLocale();
         $this->ensurePublishedCourse($course);
         $this->ensureChapterBelongsToCourse($course, $chapter);
+        $problemRelations = $this->problemCardRelations();
 
         $orderedChapters = Chapter::query()
             ->where('course_id', $course->id)
@@ -166,8 +167,8 @@ class PublicPageController extends Controller
         $chapter->load([
             'course.texts',
             'texts',
-            'problems' => function ($query): void {
-                $query->where('is_published', true)->orderBy('sort_order')->orderBy('id')->with(['texts', 'tags.texts']);
+            'problems' => function ($query) use ($problemRelations): void {
+                $query->where('is_published', true)->orderBy('sort_order')->orderBy('id')->with($problemRelations);
             },
         ]);
         $chapterLadders = ProblemLadder::query()
@@ -241,10 +242,15 @@ class PublicPageController extends Controller
         $lang = $this->setLocale();
         $selectedCourseSlug = (string) $request->query('course', '');
         $selectedChapterSlug = (string) $request->query('chapter', '');
+        $selectedGrade = $this->readGradeFilter($request);
+        $ladderRelations = ['course.texts', 'chapter.texts', 'texts.language'];
+        if ($this->gradeLevelsAvailable()) {
+            $ladderRelations[] = 'gradeLevels';
+        }
 
         $ladders = ProblemLadder::query()
             ->where('is_published', true)
-            ->with(['course.texts', 'chapter.texts', 'texts.language'])
+            ->with($ladderRelations)
             ->withCount('steps')
             ->orderBy('sort_order')
             ->orderBy('id')
@@ -253,6 +259,12 @@ class PublicPageController extends Controller
         if ($selectedCourseSlug !== '') {
             $ladders = $ladders
                 ->filter(fn (ProblemLadder $ladder): bool => optional($ladder->course)->slug === $selectedCourseSlug)
+                ->values();
+        }
+
+        if ($selectedGrade !== null && $this->gradeLevelsAvailable()) {
+            $ladders = $ladders
+                ->filter(fn (ProblemLadder $ladder): bool => $ladder->gradeLevels->contains('grade_number', $selectedGrade))
                 ->values();
         }
 
@@ -297,9 +309,11 @@ class PublicPageController extends Controller
             'filters' => [
                 'course' => $selectedCourseSlug,
                 'chapter' => $selectedChapterSlug,
+                'grade' => $selectedGrade,
             ],
             'courses' => $courses,
             'chapters' => $chapters,
+            'gradeOptions' => $this->publicGradeOptions($lang),
             'ladders' => $ladders
                 ->map(fn (ProblemLadder $ladder): array => $this->ladderCardData($ladder, $lang))
                 ->all(),
@@ -339,6 +353,7 @@ class PublicPageController extends Controller
     {
         $lang = $this->setLocale();
         abort_unless((bool) $ladder->is_published, 404);
+        $problemRelations = $this->problemCardRelations('steps.problem.');
 
         $ladder->load([
             'course.texts',
@@ -347,8 +362,7 @@ class PublicPageController extends Controller
             'steps' => function ($query): void {
                 $query->orderBy('sort_order')->orderBy('id');
             },
-            'steps.problem.texts',
-            'steps.problem.tags.texts',
+            ...$problemRelations,
         ]);
 
         $stepProblems = $ladder->steps
@@ -401,7 +415,7 @@ class PublicPageController extends Controller
     public function problem(Problem $problem): View
     {
         $lang = $this->setLocale();
-        $problem->load(['chapter.course', 'chapter.texts', 'texts', 'media.texts', 'tags.texts']);
+        $problem->load($this->problemPageRelations());
 
         abort_unless((bool) $problem->is_published, 404);
         abort_unless((bool) $problem->chapter->is_published, 404);
@@ -436,21 +450,22 @@ class PublicPageController extends Controller
     {
         $lang = $this->setLocale();
         $this->ensurePublishedCourse($course);
+        $problemRelations = $this->problemCardRelations();
 
         $course->load([
             'texts',
-            'chapters' => function ($query): void {
+            'chapters' => function ($query) use ($problemRelations): void {
                 $query
                     ->where('is_published', true)
                     ->orderBy('sort_order')
                     ->orderBy('id')
                     ->with('texts')
-                    ->with(['problems' => function ($problemsQuery): void {
+                    ->with(['problems' => function ($problemsQuery) use ($problemRelations): void {
                         $problemsQuery
                             ->where('is_published', true)
                             ->orderBy('sort_order')
                             ->orderBy('id')
-                            ->with(['texts', 'tags.texts']);
+                            ->with($problemRelations);
                     }]);
             },
         ]);
@@ -466,7 +481,7 @@ class PublicPageController extends Controller
             ->map(function (Chapter $chapter, int $chapterIndex) use ($lang, $filters, $effectiveStatus, $interactionState, $courseSlug): array {
                 $visibleProblems = $chapter->problems
                     ->values()
-                    ->filter(fn (Problem $problem): bool => $this->matchesPracticeFilters($problem, $filters['level'], $effectiveStatus, $interactionState))
+                    ->filter(fn (Problem $problem): bool => $this->matchesPracticeFilters($problem, $filters['level'], $filters['grade'], $effectiveStatus, $interactionState))
                     ->values();
 
                 return [
@@ -503,8 +518,10 @@ class PublicPageController extends Controller
                 'status' => $filters['status'],
                 'effective_status' => $effectiveStatus,
                 'level' => $filters['level'],
+                'grade' => $filters['grade'],
                 'requires_auth' => $filters['status'] !== $effectiveStatus,
             ],
+            'gradeOptions' => $this->publicGradeOptions($lang),
             'progress' => $this->buildProgressData($allProblems->pluck('id'), $interactionState),
             'canTrackProgress' => $interactionState['can_interact'],
         ]);
@@ -515,6 +532,7 @@ class PublicPageController extends Controller
         $lang = $this->setLocale();
         $this->ensurePublishedCourse($course);
         $this->ensureChapterBelongsToCourse($course, $chapter);
+        $problemRelations = $this->problemCardRelations();
 
         $orderedChapters = Chapter::query()
             ->where('course_id', $course->id)
@@ -532,8 +550,8 @@ class PublicPageController extends Controller
         $chapter->load([
             'course.texts',
             'texts',
-            'problems' => function ($query): void {
-                $query->where('is_published', true)->orderBy('sort_order')->orderBy('id')->with(['texts', 'tags.texts']);
+            'problems' => function ($query) use ($problemRelations): void {
+                $query->where('is_published', true)->orderBy('sort_order')->orderBy('id')->with($problemRelations);
             },
         ]);
 
@@ -543,7 +561,7 @@ class PublicPageController extends Controller
 
         $visibleProblems = $chapter->problems
             ->values()
-            ->filter(fn (Problem $problem): bool => $this->matchesPracticeFilters($problem, $filters['level'], $effectiveStatus, $interactionState))
+            ->filter(fn (Problem $problem): bool => $this->matchesPracticeFilters($problem, $filters['level'], $filters['grade'], $effectiveStatus, $interactionState))
             ->values();
 
         return view('public.practice.chapter', [
@@ -569,8 +587,10 @@ class PublicPageController extends Controller
                 'status' => $filters['status'],
                 'effective_status' => $effectiveStatus,
                 'level' => $filters['level'],
+                'grade' => $filters['grade'],
                 'requires_auth' => $filters['status'] !== $effectiveStatus,
             ],
+            'gradeOptions' => $this->publicGradeOptions($lang),
             'progress' => $this->buildProgressData($chapter->problems->pluck('id'), $interactionState),
             'canTrackProgress' => $interactionState['can_interact'],
         ]);
@@ -586,6 +606,7 @@ class PublicPageController extends Controller
             'lang' => $request->query('lang', $this->currentLanguage()),
             'status' => $request->query('status'),
             'level' => $request->query('level'),
+            'grade' => $request->query('grade'),
         ]);
     }
 
@@ -939,6 +960,7 @@ class PublicPageController extends Controller
             'hint_html' => $this->normalizeMathHtml($text?->hint_html),
             'solution_html' => $this->normalizeMathHtml($text?->solution_html),
             'main_tag' => $mainTagText?->title ?? null,
+            'grade_badges' => $this->gradeBadges($problem->relationLoaded('gradeLevels') ? $problem->gradeLevels : collect(), $lang),
             'difficulty' => $difficultyLevel,
             'difficulty_label' => $this->difficultyLabel($difficultyLevel),
             'difficulty_stars' => $this->difficultyStars($difficultyLevel),
@@ -950,6 +972,7 @@ class PublicPageController extends Controller
             'is_solved' => isset($interactionState['solved'][(int) $problem->id]),
             'can_track_progress' => (bool) ($interactionState['can_interact'] ?? false),
             'login_url' => route('login', ['lang' => $lang]),
+            'source_label' => $this->sourceLabel($problem, $lang),
         ];
     }
 
@@ -972,6 +995,7 @@ class PublicPageController extends Controller
             'hint_html' => $this->normalizeMathHtml($text?->hint_html),
             'solution_html' => $this->normalizeMathHtml($text?->solution_html),
             'teacher_note_html' => $this->normalizeMathHtml($text?->teacher_note_html),
+            'grade_badges' => $this->gradeBadges($problem->relationLoaded('gradeLevels') ? $problem->gradeLevels : collect(), $lang),
             'difficulty' => $difficultyLevel,
             'difficulty_label' => $this->difficultyLabel($difficultyLevel),
             'difficulty_stars' => $this->difficultyStars($difficultyLevel),
@@ -1002,6 +1026,7 @@ class PublicPageController extends Controller
                 ? route('problem.show', ['problem' => $nextProblemCode, 'lang' => $lang])
                 : null,
             'login_url' => route('login', ['lang' => $lang]),
+            'source_label' => $this->sourceLabel($problem, $lang),
         ];
     }
 
@@ -1019,6 +1044,7 @@ class PublicPageController extends Controller
             'main_method' => $text['main_method'],
             'difficulty' => $this->normalizeDifficultyLevel($ladder->difficulty_level),
             'difficulty_stars' => $this->difficultyStars($this->normalizeDifficultyLevel($ladder->difficulty_level)),
+            'grade_badges' => $this->gradeBadges($ladder->relationLoaded('gradeLevels') ? $ladder->gradeLevels : collect(), $lang),
             'steps_count' => (int) ($ladder->steps_count ?? 0),
             'show_url' => route('ladders.show', ['ladder' => $ladder->slug, 'lang' => $lang]),
             'practice_url' => route('ladders.practice', ['ladder' => $ladder->slug, 'lang' => $lang]),
@@ -1247,7 +1273,97 @@ class PublicPageController extends Controller
         return [
             'status' => $status,
             'level' => $level,
+            'grade' => $this->readGradeFilter($request),
         ];
+    }
+
+    private function readGradeFilter(Request $request): ?int
+    {
+        $grade = $request->query('grade');
+        if (! is_numeric($grade)) {
+            return null;
+        }
+
+        $grade = (int) $grade;
+
+        return ($grade >= 5 && $grade <= 11) ? $grade : null;
+    }
+
+    private function gradeLevelsAvailable(): bool
+    {
+        return Schema::hasTable('grade_levels');
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function problemCardRelations(string $prefix = ''): array
+    {
+        $relations = [
+            $prefix.'texts',
+            $prefix.'tags.texts',
+        ];
+
+        if ($this->gradeLevelsAvailable()) {
+            $relations[] = $prefix.'gradeLevels';
+        }
+
+        return $relations;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function problemPageRelations(): array
+    {
+        $relations = ['chapter.course', 'chapter.texts', 'texts', 'media.texts', 'tags.texts'];
+
+        if ($this->gradeLevelsAvailable()) {
+            $relations[] = 'gradeLevels';
+        }
+
+        return $relations;
+    }
+
+    private function publicGradeOptions(string $lang): array
+    {
+        if (! $this->gradeLevelsAvailable()) {
+            return [];
+        }
+
+        return DB::table('grade_levels')
+            ->where('is_active', 1)
+            ->orderBy('sort_order')
+            ->orderBy('grade_number')
+            ->get()
+            ->map(fn ($grade): array => [
+                'number' => (int) $grade->grade_number,
+                'label' => $lang === 'ru' ? (string) $grade->title_ru : (string) $grade->title_en,
+            ])
+            ->all();
+    }
+
+    private function gradeBadges(Collection $grades, string $lang): array
+    {
+        return $grades
+            ->sortBy('grade_number')
+            ->map(fn ($grade): string => $lang === 'ru' ? (string) $grade->title_ru : (string) $grade->title_en)
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function sourceLabel(Problem $problem, string $lang): ?string
+    {
+        $separator = ' '."\u{00B7}".' ';
+        $parts = array_filter([
+            $problem->source_name,
+            $problem->source_year,
+            $problem->source_grade ? ($lang === 'ru' ? "\u{041A}\u{043B}\u{0430}\u{0441}\u{0441} ".$problem->source_grade : 'Grade '.$problem->source_grade) : null,
+            $problem->source_problem_number ? ($lang === 'ru' ? "\u{0417}\u{0430}\u{0434}\u{0430}\u{0447}\u{0430} ".$problem->source_problem_number : 'Problem '.$problem->source_problem_number) : null,
+        ]);
+
+        return $parts === [] ? null : implode($separator, $parts);
     }
 
     private function interactionStateForProblems(Collection $problemIds): array
@@ -1333,10 +1449,18 @@ class PublicPageController extends Controller
         return $requestedStatus;
     }
 
-    private function matchesPracticeFilters(Problem $problem, ?int $level, string $status, array $interactionState): bool
+    private function matchesPracticeFilters(Problem $problem, ?int $level, ?int $grade, string $status, array $interactionState): bool
     {
         if ($level !== null && $this->normalizeDifficultyLevel($problem->difficulty) !== $level) {
             return false;
+        }
+
+        if ($grade !== null && $this->gradeLevelsAvailable()) {
+            $hasGrade = $problem->relationLoaded('gradeLevels')
+                && $problem->gradeLevels->contains('grade_number', $grade);
+            if (! $hasGrade) {
+                return false;
+            }
         }
 
         $problemId = (int) $problem->id;

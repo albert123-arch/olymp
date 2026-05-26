@@ -20,6 +20,9 @@
             @if($problem['main_tag'])
                 <span class="badge text-bg-light border">{{ $problem['main_tag'] }}</span>
             @endif
+            @foreach($problem['grade_badges'] ?? [] as $gradeBadge)
+                <span class="badge text-bg-light border">{{ $gradeBadge }}</span>
+            @endforeach
             <span class="badge {{ $problem['difficulty_class'] }}" aria-label="{{ $problem['difficulty_label'] }}">{{ $problem['difficulty_stars'] }}</span>
 
             <button type="button"
@@ -53,6 +56,10 @@
         <div class="content-html math-content math-block mb-3">
             {!! $problem['statement_html'] !!}
         </div>
+    @endif
+
+    @if(!empty($problem['source_label']))
+        <div class="small text-secondary mb-3">{{ $problem['source_label'] }}</div>
     @endif
 
     @if($hasHint)

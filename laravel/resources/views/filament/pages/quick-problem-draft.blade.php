@@ -84,7 +84,55 @@
                         <p class="text-xs text-gray-500 mt-1">New tags are created safely and attached to this problem.</p>
                     </div>
                 </div>
+
+                @if($hasGradeLevels)
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium mb-1">Grade levels</label>
+                        <select wire:model.defer="selectedGradeIds" multiple class="fi-input block w-full rounded-lg border-gray-300 min-h-32">
+                            @foreach ($grades as $id => $label)
+                                <option value="{{ $id }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Grade is separate from difficulty level.</p>
+                    </div>
+                @endif
             </x-filament::section>
+
+            @if($hasSourceMetadata)
+                <x-filament::section>
+                    <h3 class="font-medium mb-3">Source / Olympiad metadata</h3>
+                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Source name</label>
+                            <input wire:model.defer="sourceName" type="text" class="fi-input block w-full rounded-lg border-gray-300" placeholder="ARMO">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Source year</label>
+                            <input wire:model.defer="sourceYear" type="number" min="1800" max="2200" class="fi-input block w-full rounded-lg border-gray-300" placeholder="2018">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Round</label>
+                            <input wire:model.defer="sourceRound" type="text" class="fi-input block w-full rounded-lg border-gray-300" placeholder="regional">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Original grade</label>
+                            <input wire:model.defer="sourceGrade" type="text" class="fi-input block w-full rounded-lg border-gray-300" placeholder="9">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Problem number</label>
+                            <input wire:model.defer="sourceProblemNumber" type="text" class="fi-input block w-full rounded-lg border-gray-300" placeholder="3">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Source URL</label>
+                            <input wire:model.defer="sourceUrl" type="url" class="fi-input block w-full rounded-lg border-gray-300">
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium mb-1">Source note</label>
+                        <textarea wire:model.defer="sourceNote" rows="4" class="fi-input block w-full rounded-lg border-gray-300 font-mono"></textarea>
+                    </div>
+                </x-filament::section>
+            @endif
 
             <x-filament::section>
                 <h3 class="font-medium mb-3">Russian text (RU)</h3>

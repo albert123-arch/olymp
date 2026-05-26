@@ -126,6 +126,10 @@
                             <div class="text-sm text-gray-500">Course</div>
                             <div class="font-semibold mt-1">{{ $overview['course_slug'] }}</div>
                         </div>
+                        <div class="rounded-lg border p-4">
+                            <div class="text-sm text-gray-500">Recommended grades</div>
+                            <div class="font-semibold mt-1">{{ $overview['recommended_grades'] ?: 'Not set' }}</div>
+                        </div>
 
                         <div class="rounded-lg border p-4">
                             <div class="text-sm text-gray-500">Problems</div>
@@ -276,6 +280,20 @@
                         <button type="button" wire:click="publishSelected" class="fi-btn fi-btn-size-sm fi-btn-color-success">Publish selected</button>
                         <button type="button" wire:click="unpublishSelected" class="fi-btn fi-btn-size-sm fi-btn-color-danger">Unpublish selected</button>
 
+                        @if(!empty($gradeOptions))
+                            <div class="flex items-end gap-2">
+                                <div>
+                                    <label class="block text-xs mb-1">Grade filter</label>
+                                    <select wire:model.live="selectedGradeFilter" class="fi-input rounded-md border-gray-300">
+                                        <option value="">All grades</option>
+                                        @foreach($gradeOptions as $id => $label)
+                                            <option value="{{ $id }}">{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        @endif
+
                         <div class="flex items-end gap-2">
                             <div>
                                 <label class="block text-xs mb-1">Difficulty</label>
@@ -296,6 +314,20 @@
                             </div>
                             <button type="button" wire:click="setSortSelected" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Set sort</button>
                         </div>
+
+                        @if(!empty($gradeOptions))
+                            <div class="flex items-end gap-2">
+                                <div>
+                                    <label class="block text-xs mb-1">Assign grades</label>
+                                    <select wire:model="bulkGradeIds" multiple class="fi-input rounded-md border-gray-300 min-w-48">
+                                        @foreach($gradeOptions as $id => $label)
+                                            <option value="{{ $id }}">{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <button type="button" wire:click="assignGradesSelected" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Assign grades</button>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="overflow-x-auto">
@@ -306,10 +338,12 @@
                                 <th class="p-2 text-left">Code</th>
                                 <th class="p-2 text-left">Title</th>
                                 <th class="p-2 text-left">Diff</th>
+                                <th class="p-2 text-left">Grades</th>
                                 <th class="p-2 text-left">Pub</th>
                                 <th class="p-2 text-left">RU</th>
                                 <th class="p-2 text-left">EN</th>
                                 <th class="p-2 text-left">Tags</th>
+                                <th class="p-2 text-left">Source</th>
                                 <th class="p-2 text-left">Sort</th>
                                 <th class="p-2 text-left">Actions</th>
                             </tr>
@@ -328,10 +362,12 @@
                                     <td class="p-2 font-mono">{{ $problem['code'] }}</td>
                                     <td class="p-2">{{ $problem['title'] }}</td>
                                     <td class="p-2">{{ $problem['difficulty'] }}</td>
+                                    <td class="p-2">{{ $problem['grades'] ?: '-' }}</td>
                                     <td class="p-2">{!! $problem['is_published'] ? '✅' : '❌' !!}</td>
                                     <td class="p-2">{!! $problem['has_ru'] ? '✅' : '❌' !!}</td>
                                     <td class="p-2">{!! $problem['has_en'] ? '✅' : '❌' !!}</td>
                                     <td class="p-2">{{ $problem['tags'] }}</td>
+                                    <td class="p-2">{{ $problem['source'] ?: '-' }}</td>
                                     <td class="p-2">{{ $problem['sort_order'] }}</td>
                                     <td class="p-2">
                                         <div class="flex flex-wrap gap-1">
@@ -347,7 +383,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="10" class="p-3 text-gray-500">No problems in this chapter.</td></tr>
+                                <tr><td colspan="12" class="p-3 text-gray-500">No problems in this chapter.</td></tr>
                             @endforelse
                             </tbody>
                         </table>
@@ -363,6 +399,7 @@
                             <tr class="border-b bg-gray-50">
                                 <th class="p-2 text-left">Title</th>
                                 <th class="p-2 text-left">Difficulty</th>
+                                <th class="p-2 text-left">Grades</th>
                                 <th class="p-2 text-left">Published</th>
                                 <th class="p-2 text-left">Steps</th>
                                 <th class="p-2 text-left">RU/EN</th>
@@ -374,6 +411,7 @@
                                 <tr class="border-b">
                                     <td class="p-2">{{ $ladder['title'] }}</td>
                                     <td class="p-2">{{ $ladder['difficulty'] }}</td>
+                                    <td class="p-2">{{ $ladder['grades'] ?: '-' }}</td>
                                     <td class="p-2">{!! $ladder['is_published'] ? '✅' : '❌' !!}</td>
                                     <td class="p-2">{{ $ladder['steps_count'] }}</td>
                                     <td class="p-2">
@@ -388,7 +426,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="6" class="p-3 text-gray-500">No ladders in this chapter.</td></tr>
+                                <tr><td colspan="7" class="p-3 text-gray-500">No ladders in this chapter.</td></tr>
                             @endforelse
                             </tbody>
                         </table>

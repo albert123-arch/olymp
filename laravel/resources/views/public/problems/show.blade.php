@@ -8,6 +8,9 @@
                 <h1 class="h2 mb-2">{{ $problem['code'] }} {{ $problem['title'] }}</h1>
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                     <span class="badge text-bg-light border">{{ $problem['book_number'] ? '#'.$problem['book_number'] : $problem['code'] }}</span>
+                    @foreach($problem['grade_badges'] ?? [] as $gradeBadge)
+                        <span class="badge text-bg-light border">{{ $gradeBadge }}</span>
+                    @endforeach
                     <span class="badge {{ $problem['difficulty_class'] }}">{{ $problem['difficulty_stars'] }} {{ $problem['difficulty_label'] }}</span>
                     <button type="button"
                             class="btn btn-sm {{ $problem['is_solved'] ? 'btn-success' : 'btn-outline-secondary' }} px-2 py-0"
@@ -24,6 +27,9 @@
                     <div class="content-html math-content math-block mb-4">
                         {!! $problem['statement_html'] !!}
                     </div>
+                @endif
+                @if(!empty($problem['source_label']))
+                    <div class="small text-secondary mb-3">{{ $problem['source_label'] }}</div>
                 @endif
             </div>
             <div class="d-flex flex-wrap gap-2 align-self-lg-start">

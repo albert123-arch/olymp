@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProblemLadderResource\Pages;
 use App\Filament\Resources\ProblemLadderResource\RelationManagers\LadderTextsRelationManager;
+use App\Models\GradeLevel;
 use App\Models\ProblemLadder;
 use Filament\Forms;
 use Filament\Resources\Resource;
@@ -26,7 +27,7 @@ class ProblemLadderResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->schema([
+        $components = [
             Forms\Components\Select::make('course_id')
                 ->relationship('course', 'slug')
                 ->searchable()
@@ -44,23 +45,48 @@ class ProblemLadderResource extends Resource
             Forms\Components\TextInput::make('difficulty_level')->numeric()->minValue(1)->maxValue(5)->default(1),
             Forms\Components\TextInput::make('sort_order')->numeric()->default(0),
             Forms\Components\Toggle::make('is_published')->default(true),
-        ]);
+        ];
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('grade_levels')) {
+            $components[] = Forms\Components\CheckboxList::make('gradeLevels')
+                ->label('Grade levels')
+                ->relationship(
+                    'gradeLevels',
+                    'title_en',
+                    fn ($query) => $query->where('is_active', true)->orderBy('sort_order')->orderBy('grade_number')
+                )
+                ->getOptionLabelFromRecordUsing(fn (GradeLevel $record): string => $record->title_en.' / '.$record->title_ru)
+                ->columns(4)
+                ->columnSpanFull();
+        }
+
+        return $schema->schema($components);
     }
 
     public static function table(Table $table): Table
     {
+        $columns = [
+            Tables\Columns\TextColumn::make('title')->searchable()->wrap(),
+            Tables\Columns\TextColumn::make('course.slug')->searchable(),
+            Tables\Columns\TextColumn::make('chapter.slug')->searchable(),
+            Tables\Columns\TextColumn::make('main_method')->searchable(),
+            Tables\Columns\TextColumn::make('difficulty_level')->badge(),
+        ];
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('grade_levels')) {
+            $columns[] = Tables\Columns\TextColumn::make('gradeLevels.grade_number')->label('Grades')->badge();
+        }
+
+        $columns = [
+            ...$columns,
+            Tables\Columns\TextColumn::make('steps_count')->counts('steps')->label('Steps'),
+            Tables\Columns\IconColumn::make('is_published')->boolean(),
+        ];
+
         return $table
             ->defaultSort('sort_order')
             ->reorderable('sort_order')
-            ->columns([
-                Tables\Columns\TextColumn::make('title')->searchable()->wrap(),
-                Tables\Columns\TextColumn::make('course.slug')->searchable(),
-                Tables\Columns\TextColumn::make('chapter.slug')->searchable(),
-                Tables\Columns\TextColumn::make('main_method')->searchable(),
-                Tables\Columns\TextColumn::make('difficulty_level')->badge(),
-                Tables\Columns\TextColumn::make('steps_count')->counts('steps')->label('Steps'),
-                Tables\Columns\IconColumn::make('is_published')->boolean(),
-            ])
+            ->columns($columns)
             ->actions([EditAction::make()])
             ->bulkActions([DeleteBulkAction::make()]);
     }

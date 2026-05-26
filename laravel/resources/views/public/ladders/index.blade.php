@@ -14,7 +14,7 @@
     <section class="content-panel p-3 p-lg-4 mb-4">
         <form method="GET" class="row g-2 align-items-end">
             <input type="hidden" name="lang" value="{{ $currentLang }}">
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-3">
                 <label class="form-label small text-secondary mb-1">{{ __('public.course') }}</label>
                 <select name="course" class="form-select form-select-sm">
                     <option value="">{{ __('public.filter_all') }}</option>
@@ -23,7 +23,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-3">
                 <label class="form-label small text-secondary mb-1">{{ __('public.chapter') }}</label>
                 <select name="chapter" class="form-select form-select-sm">
                     <option value="">{{ __('public.filter_all') }}</option>
@@ -32,7 +32,16 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-12 col-md-4 d-flex gap-2">
+            <div class="col-12 col-md-3">
+                <label class="form-label small text-secondary mb-1">{{ $currentLang === 'ru' ? 'Класс' : 'Grade' }}</label>
+                <select name="grade" class="form-select form-select-sm">
+                    <option value="">{{ __('public.filter_all') }}</option>
+                    @foreach($gradeOptions ?? [] as $grade)
+                        <option value="{{ $grade['number'] }}" @selected((int)($filters['grade'] ?? 0) === (int)$grade['number'])>{{ $grade['label'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-12 col-md-3 d-flex gap-2">
                 <button type="submit" class="btn btn-sm btn-primary">{{ __('public.filter') }}</button>
                 <a class="btn btn-sm btn-light border" href="{{ route('ladders.index', ['lang' => $currentLang]) }}">{{ __('public.reset_filters') }}</a>
             </div>
@@ -63,6 +72,9 @@
                         </div>
                         <div class="d-flex flex-column align-items-lg-end gap-2">
                             <span class="badge text-bg-light border">{{ __('public.steps_count', ['count' => $ladder['steps_count']]) }}</span>
+                            @foreach($ladder['grade_badges'] ?? [] as $gradeBadge)
+                                <span class="badge text-bg-light border">{{ $gradeBadge }}</span>
+                            @endforeach
                             <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">{{ $ladder['difficulty_stars'] }}</span>
                             <div class="d-flex gap-2">
                                 <a class="btn btn-sm btn-outline-primary" href="{{ $ladder['show_url'] }}">{{ __('public.open') }}</a>

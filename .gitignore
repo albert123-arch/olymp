@@ -9,6 +9,8 @@ Thumbs.db
 database/*.sql
 *.sql
 *.sql.gz
+!laravel/database/sql/
+!laravel/database/sql/*.sql
 *.zip
 *.tar
 *.tar.gz
@@ -29,3 +31,8 @@ backups/
 backup/
 dump/
 dumps/
+
+laravel/storage/imports/*.json
+laravel/storage/imports/*.sql
+laravel/*import*.php
+laravel/generate_*.php

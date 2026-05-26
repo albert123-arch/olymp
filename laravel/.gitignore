@@ -26,6 +26,8 @@
 *.sql
 *.sql.gz
 database/*.sql
+!/database/sql/
+!/database/sql/*.sql
 *.zip
 *.tar
 *.tar.gz

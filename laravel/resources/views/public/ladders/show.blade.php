@@ -23,6 +23,9 @@
             </div>
             <div class="d-flex flex-column align-items-lg-end gap-2">
                 <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">{{ $ladder['difficulty_stars'] }}</span>
+                @foreach($ladder['grade_badges'] ?? [] as $gradeBadge)
+                    <span class="badge text-bg-light border">{{ $gradeBadge }}</span>
+                @endforeach
                 <span class="badge text-bg-light border">{{ __('public.steps_count', ['count' => $ladder['steps_count']]) }}</span>
                 <a class="btn btn-primary btn-sm" href="{{ $ladder['practice_url'] }}">{{ __('public.start_practice') }}</a>
             </div>

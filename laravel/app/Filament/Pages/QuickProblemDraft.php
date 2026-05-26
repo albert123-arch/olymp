@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Chapter;
+use App\Models\GradeLevel;
 use App\Models\Language;
 use App\Models\Problem;
 use App\Models\Tag;
@@ -10,6 +11,7 @@ use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use UnitEnum;
@@ -43,7 +45,18 @@ class QuickProblemDraft extends Page
     /** @var array<int> */
     public array $selectedTagIds = [];
 
+    /** @var array<int> */
+    public array $selectedGradeIds = [];
+
     public string $newTags = '';
+
+    public string $sourceName = '';
+    public string|int|null $sourceYear = null;
+    public string $sourceRound = '';
+    public string $sourceGrade = '';
+    public string $sourceProblemNumber = '';
+    public string $sourceUrl = '';
+    public string $sourceNote = '';
 
     public string $ruTitle = '';
     public string $ruBody = '';
@@ -111,6 +124,14 @@ class QuickProblemDraft extends Page
             ],
             'sortOrder' => ['nullable', 'integer', 'min:0'],
             'difficulty' => ['required', 'integer', 'min:1', 'max:5'],
+            'selectedGradeIds' => ['array'],
+            'sourceName' => ['nullable', 'string', 'max:255'],
+            'sourceYear' => ['nullable', 'integer', 'min:1800', 'max:2200'],
+            'sourceRound' => ['nullable', 'string', 'max:100'],
+            'sourceGrade' => ['nullable', 'string', 'max:50'],
+            'sourceProblemNumber' => ['nullable', 'string', 'max:50'],
+            'sourceUrl' => ['nullable', 'url', 'max:500'],
+            'sourceNote' => ['nullable', 'string'],
             'ruTitle' => ['required', 'string', 'max:255'],
             'ruBody' => ['required', 'string'],
             'ruHint' => ['nullable', 'string'],
@@ -146,7 +167,7 @@ class QuickProblemDraft extends Page
         $sortOrder = $this->sortOrder ?? $this->nextSortOrder((int) $chapter->id);
 
         DB::transaction(function () use ($chapter, $sortOrder): void {
-            $problem = Problem::query()->create([
+            $problemPayload = [
                 'chapter_id' => (int) $chapter->id,
                 'problem_code' => trim($this->problemCode),
                 'book_number' => null,
@@ -154,7 +175,21 @@ class QuickProblemDraft extends Page
                 'problem_type' => 'mixed',
                 'sort_order' => (int) $sortOrder,
                 'is_published' => (bool) $this->isPublished,
-            ]);
+            ];
+
+            if (Schema::hasColumn('problems', 'source_name')) {
+                $problemPayload = array_merge($problemPayload, [
+                    'source_name' => $this->blankToNull($this->sourceName),
+                    'source_year' => $this->blankToNull($this->sourceYear),
+                    'source_round' => $this->blankToNull($this->sourceRound),
+                    'source_grade' => $this->blankToNull($this->sourceGrade),
+                    'source_problem_number' => $this->blankToNull($this->sourceProblemNumber),
+                    'source_url' => $this->blankToNull($this->sourceUrl),
+                    'source_note' => $this->blankToNull($this->sourceNote),
+                ]);
+            }
+
+            $problem = Problem::query()->create($problemPayload);
 
             $problem->texts()->create([
                 'lang' => 'ru',
@@ -200,6 +235,13 @@ class QuickProblemDraft extends Page
                 $problem->tags()->syncWithoutDetaching(array_values(array_unique($tagIds)));
             }
 
+            if (Schema::hasTable('grade_levels')) {
+                $gradeIds = collect($this->selectedGradeIds)->map(fn ($id) => (int) $id)->filter()->unique()->values()->all();
+                if (! empty($gradeIds)) {
+                    $problem->gradeLevels()->sync($gradeIds);
+                }
+            }
+
             $this->createdProblemId = (int) $problem->id;
         });
 
@@ -212,7 +254,9 @@ class QuickProblemDraft extends Page
 
         $this->resetTextInputs();
         $this->selectedTagIds = [];
+        $this->selectedGradeIds = [];
         $this->newTags = '';
+        $this->resetSourceInputs();
         $this->refreshDefaults(true);
     }
 
@@ -222,6 +266,9 @@ class QuickProblemDraft extends Page
             'courses' => $this->courseOptions(),
             'chapters' => $this->chapterOptions(),
             'tags' => $this->tagOptions(),
+            'grades' => $this->gradeOptions(),
+            'hasGradeLevels' => Schema::hasTable('grade_levels'),
+            'hasSourceMetadata' => Schema::hasColumn('problems', 'source_name'),
             'warnings' => $this->collectWarnings(),
             'contentStudioUrl' => url('/admin/content-studio') . ($this->selectedChapterId ? ('?chapter_id=' . $this->selectedChapterId) : ''),
             'backUrl' => $this->returnTo === 'module-workspace' ? $this->moduleWorkspaceUrl() : url('/admin/content-studio') . $this->contextQuery(),
@@ -421,6 +468,24 @@ class QuickProblemDraft extends Page
     /**
      * @return array<int, string>
      */
+    private function gradeOptions(): array
+    {
+        if (! Schema::hasTable('grade_levels')) {
+            return [];
+        }
+
+        return GradeLevel::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('grade_number')
+            ->get()
+            ->mapWithKeys(fn (GradeLevel $grade): array => [(int) $grade->id => $grade->title_en.' / '.$grade->title_ru])
+            ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
     private function collectWarnings(): array
     {
         $fields = [
@@ -514,6 +579,24 @@ class QuickProblemDraft extends Page
         $this->enBody = '';
         $this->enHint = '';
         $this->enSolution = '';
+    }
+
+    private function resetSourceInputs(): void
+    {
+        $this->sourceName = '';
+        $this->sourceYear = null;
+        $this->sourceRound = '';
+        $this->sourceGrade = '';
+        $this->sourceProblemNumber = '';
+        $this->sourceUrl = '';
+        $this->sourceNote = '';
+    }
+
+    private function blankToNull(mixed $value): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
     }
 
     /**

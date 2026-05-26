@@ -24,6 +24,9 @@
     <section class="content-panel p-3 p-lg-4 mb-4">
         <form method="GET" class="d-flex flex-wrap gap-2 align-items-center">
             <input type="hidden" name="lang" value="{{ $currentLang }}">
+            <input type="hidden" name="status" value="{{ $filters['status'] ?? 'all' }}">
+            <input type="hidden" name="level" value="{{ $filters['level'] ?? '' }}">
+            <input type="hidden" name="grade" value="{{ $filters['grade'] ?? '' }}">
             <span class="small text-secondary me-1">{{ __('public.filter') }}:</span>
 
             @foreach(['all' => __('public.filter_all'), 'unsolved' => __('public.filter_unsolved'), 'solved' => __('public.filter_solved'), 'bookmarked' => __('public.filter_bookmarked')] as $statusValue => $statusLabel)
@@ -48,6 +51,15 @@
                     {{ __('public.level_short', ['level' => $i]) }}
                 </button>
             @endfor
+
+            @foreach($gradeOptions ?? [] as $grade)
+                <button type="submit"
+                        class="btn btn-sm {{ (int)($filters['grade'] ?? 0) === (int)$grade['number'] ? 'btn-primary' : 'btn-outline-secondary' }}"
+                        name="grade"
+                        value="{{ $grade['number'] }}">
+                    {{ $grade['label'] }}
+                </button>
+            @endforeach
 
             <a class="btn btn-sm btn-light border ms-lg-2" href="{{ route('chapter.practice', ['course' => $chapter['course']['slug'], 'chapter' => $chapter['slug'], 'lang' => $currentLang]) }}">{{ __('public.reset_filters') }}</a>
         </form>

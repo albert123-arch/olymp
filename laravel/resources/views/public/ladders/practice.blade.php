@@ -14,6 +14,13 @@
                         {{ __('public.main_method') }}: {{ $ladder['main_method'] }}
                     @endif
                 </div>
+                @if(!empty($ladder['grade_badges']))
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        @foreach($ladder['grade_badges'] as $gradeBadge)
+                            <span class="badge text-bg-light border">{{ $gradeBadge }}</span>
+                        @endforeach
+                    </div>
+                @endif
             </div>
             <div class="d-flex flex-wrap gap-2 align-self-lg-start">
                 <a class="btn btn-outline-secondary btn-sm" href="{{ route('ladders.index', ['lang' => $currentLang]) }}">{{ __('public.ladders') }}</a>

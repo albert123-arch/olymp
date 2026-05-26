@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Chapter extends Model
@@ -40,6 +41,14 @@ class Chapter extends Model
     public function ladders(): HasMany
     {
         return $this->hasMany(ProblemLadder::class);
+    }
+
+    public function gradeLevels(): BelongsToMany
+    {
+        return $this->belongsToMany(GradeLevel::class, 'chapter_grade_levels')
+            ->withPivot('is_primary')
+            ->withTimestamps()
+            ->orderBy('grade_number');
     }
 
     public function progress(): HasMany

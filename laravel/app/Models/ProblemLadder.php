@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProblemLadder extends Model
@@ -46,5 +47,13 @@ class ProblemLadder extends Model
     public function texts(): HasMany
     {
         return $this->hasMany(ProblemLadderText::class, 'problem_ladder_id');
+    }
+
+    public function gradeLevels(): BelongsToMany
+    {
+        return $this->belongsToMany(GradeLevel::class, 'problem_ladder_grade_levels')
+            ->withPivot('is_primary')
+            ->withTimestamps()
+            ->orderBy('grade_number');
     }
 }
