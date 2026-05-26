@@ -11,7 +11,7 @@
         </div>
         <div class="d-flex flex-column align-items-md-end gap-2">
             <span class="badge text-bg-light border">{{ $chapter['problem_count'] }} {{ __('public.problems') }}</span>
-            <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+            <div class="d-flex flex-wrap gap-2 justify-content-md-end chapter-tabs">
                 <a class="btn btn-sm btn-outline-primary" href="{{ route('chapter.show', ['course' => $courseSlug, 'chapter' => $chapter['slug'], 'lang' => $currentLang]) }}#theory">{{ __('public.theory') }}</a>
                 <a class="btn btn-sm btn-outline-primary" href="{{ route('chapter.show', ['course' => $courseSlug, 'chapter' => $chapter['slug'], 'lang' => $currentLang]) }}#examples">{{ __('public.examples') }}</a>
                 <a class="btn btn-sm btn-primary" href="{{ route('chapter.practice', ['course' => $courseSlug, 'chapter' => $chapter['slug'], 'lang' => $currentLang]) }}">{{ __('public.practice') }}</a>

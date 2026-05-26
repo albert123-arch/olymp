@@ -19,7 +19,7 @@
                     @endif
                 </div>
             </div>
-            <div class="d-flex flex-wrap gap-2 align-self-lg-start">
+            <div class="d-flex flex-wrap gap-2 align-self-lg-start course-tabs">
                 <a class="btn btn-primary" href="{{ route('course.theory', ['course' => $course['slug'], 'lang' => $currentLang]) }}">{{ __('public.theory') }}</a>
                 <a class="btn btn-outline-primary" href="#chapters">{{ __('public.examples') }}</a>
                 <a class="btn btn-outline-secondary" href="{{ route('course.practice', ['course' => $course['slug'], 'lang' => $currentLang]) }}">{{ __('public.practice') }}</a>

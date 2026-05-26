@@ -16,13 +16,13 @@
                 {{ __('public.progress_login_required') }}
             @endif
         </div>
-        <div class="d-flex flex-wrap gap-2 mb-3">
+        <div class="d-flex flex-wrap gap-2 mb-3 chapter-tabs">
             <a class="btn btn-sm btn-outline-secondary" href="{{ route('course.show', ['course' => $chapter['course']['slug'], 'lang' => $currentLang]) }}">{{ __('public.back_to_course') }}</a>
             <a class="btn btn-sm btn-outline-primary" href="{{ $chapter['practice_url'] }}">{{ __('public.practice') }}</a>
             <a class="btn btn-sm btn-outline-secondary" href="{{ $chapter['ladders_url'] }}">{{ __('public.ladders') }}</a>
         </div>
 
-        <div class="d-flex flex-wrap gap-2 sticky-top pt-2 pb-1 bg-white bg-opacity-75">
+        <div class="d-flex flex-wrap gap-2 sticky-top pt-2 pb-1 bg-white bg-opacity-75 chapter-tabs">
             <a class="btn btn-sm btn-outline-primary" href="#theory">{{ __('public.theory') }}</a>
             <a class="btn btn-sm btn-outline-primary" href="#examples">{{ __('public.examples') }}</a>
             <a class="btn btn-sm btn-primary" href="{{ $chapter['practice_url'] }}">{{ __('public.practice') }}</a>
