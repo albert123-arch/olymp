@@ -8,6 +8,7 @@ use App\Models\GradeLevel;
 use App\Models\Problem;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -57,7 +58,7 @@ class ProblemResource extends Resource
         }
 
         if (\Illuminate\Support\Facades\Schema::hasColumn('problems', 'source_name')) {
-            $components[] = Forms\Components\Section::make('Source / Olympiad metadata')
+            $components[] = Section::make('Source / Olympiad metadata')
                 ->schema([
                     Forms\Components\TextInput::make('source_name')->maxLength(255),
                     Forms\Components\TextInput::make('source_year')->numeric()->minValue(1800)->maxValue(2200),
