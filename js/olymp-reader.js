@@ -17,6 +17,68 @@
         }
     };
 
+    const clampMediaSize = function (value) {
+        const parsed = Number.parseInt(value, 10);
+        if (!Number.isFinite(parsed)) {
+            return 100;
+        }
+
+        return Math.min(160, Math.max(45, parsed));
+    };
+
+    const mediaSizeStorageKey = function (figure) {
+        const mediaId = figure.dataset.problemMediaId || 'unknown';
+        const user = figure.dataset.problemMediaUser || 'guest';
+
+        return `problemMediaSize:${user}:${mediaId}`;
+    };
+
+    const applyMediaSize = function (figure, value, persist) {
+        const size = clampMediaSize(value);
+        const key = mediaSizeStorageKey(figure);
+
+        document.querySelectorAll('[data-problem-media-resizable]').forEach(function (item) {
+            if (mediaSizeStorageKey(item) !== key) {
+                return;
+            }
+
+            item.style.setProperty('--problem-media-size', `${size}%`);
+            const slider = item.querySelector('[data-problem-media-slider]');
+            const output = item.querySelector('[data-problem-media-size-value]');
+
+            if (slider) {
+                slider.value = String(size);
+            }
+            if (output) {
+                output.textContent = `${size}%`;
+            }
+        });
+
+        if (persist) {
+            storageSet(key, String(size));
+        }
+    };
+
+    const setupProblemMediaResizers = function () {
+        document.querySelectorAll('[data-problem-media-resizable]').forEach(function (figure) {
+            if (figure.dataset.mediaResizeReady === '1') {
+                return;
+            }
+
+            figure.dataset.mediaResizeReady = '1';
+            const slider = figure.querySelector('[data-problem-media-slider]');
+            if (!slider) {
+                return;
+            }
+
+            applyMediaSize(figure, storageGet(mediaSizeStorageKey(figure)) || slider.value || '100', false);
+
+            slider.addEventListener('input', function () {
+                applyMediaSize(figure, slider.value, true);
+            });
+        });
+    };
+
     const readerLabels = function () {
         const lang = (document.documentElement.lang || '').toLowerCase();
         const isRu = lang.startsWith('ru');
@@ -309,6 +371,7 @@
             typesetMath(document.body);
         });
         setupReaderToolbar();
+        setupProblemMediaResizers();
         setupActiveReaderNav();
         setTimeout(function () {
             typesetMath(document.body);

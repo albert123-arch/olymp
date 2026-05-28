@@ -88,12 +88,19 @@
         </div>
     @endif
 
+    @foreach($problem['media']['statement'] ?? [] as $media)
+        @include('public.partials.problem-media', ['media' => $media, 'class' => 'problem-media-statement'])
+    @endforeach
+
     @if($hasHint)
         <section id="{{ $problemUid }}-hint" class="reader-accordion-content mb-3" hidden>
             <div class="small fw-semibold mb-1">{{ __('public.hint') }}</div>
             <div class="content-html math-content math-block">
                 {!! $problem['hint_html'] !!}
             </div>
+            @foreach($problem['media']['hint'] ?? [] as $media)
+                @include('public.partials.problem-media', ['media' => $media, 'class' => 'problem-media-hint'])
+            @endforeach
         </section>
     @endif
 
@@ -123,8 +130,15 @@
             <div class="content-html math-content math-block">
                 {!! $problem['solution_html'] !!}
             </div>
+            @foreach($problem['media']['solution'] ?? [] as $media)
+                @include('public.partials.problem-media', ['media' => $media, 'class' => 'problem-media-solution'])
+            @endforeach
         </section>
     @endif
+
+    @foreach($problem['media']['extra'] ?? [] as $media)
+        @include('public.partials.problem-media', ['media' => $media, 'class' => 'problem-media-extra'])
+    @endforeach
 
     <details class="reader-details mt-3">
         <summary>{{ $detailsLabel }}</summary>

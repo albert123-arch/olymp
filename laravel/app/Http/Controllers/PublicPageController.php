@@ -960,6 +960,7 @@ class PublicPageController extends Controller
             'statement_html' => $this->normalizeMathHtml($text?->statement_html),
             'hint_html' => $this->normalizeMathHtml($text?->hint_html),
             'solution_html' => $this->normalizeMathHtml($text?->solution_html),
+            'media' => $this->problemMediaData($problem, $lang),
             'main_tag' => $mainTagText?->title ?? null,
             'grade_badges' => $this->gradeBadges($problem->relationLoaded('gradeLevels') ? $problem->gradeLevels : collect(), $lang),
             'difficulty' => $difficultyLevel,
@@ -1379,6 +1380,7 @@ class PublicPageController extends Controller
         $relations = [
             $prefix.'texts',
             $prefix.'tags.texts',
+            $prefix.'media.texts',
         ];
 
         if ($this->gradeLevelsAvailable()) {

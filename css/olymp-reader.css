@@ -848,6 +848,7 @@ body.reader-active footer {
 
 .problem-media {
     margin: 18px 0;
+    --problem-media-size: 100%;
 }
 
 .problem-media-frame {
@@ -863,6 +864,35 @@ body.reader-active footer {
     height: auto;
     margin-inline: auto;
     max-width: 100%;
+}
+
+.problem-media.is-resizable .problem-media-frame img {
+    max-width: none;
+    width: var(--problem-media-size, 100%);
+}
+
+.problem-media-resize {
+    align-items: center;
+    color: var(--reader-muted);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
+    user-select: none;
+    font-size: 0.82rem;
+}
+
+.problem-media-resize input[type="range"] {
+    accent-color: var(--reader-accent);
+    max-width: 170px;
+    width: min(38vw, 170px);
+}
+
+.problem-media-resize [data-problem-media-size-value] {
+    color: var(--reader-text);
+    font-variant-numeric: tabular-nums;
+    min-width: 42px;
+    text-align: right;
 }
 
 .media-caption {
