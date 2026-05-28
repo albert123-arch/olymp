@@ -15,6 +15,7 @@ use App\Models\Problem;
 use App\Models\ProblemLadder;
 use App\Models\ProblemLadderText;
 use App\Models\Tag;
+use App\Support\ProblemMediaUpload;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -271,6 +272,8 @@ class ModuleWorkspace extends Page
             'checklist' => $checklist,
             'gradeOptions' => $this->gradeOptions(),
             'quickAddUrl' => url('/admin/quick-problem') . $this->selectedParamsQuery(['return' => 'module-workspace']),
+            'problemBuilderUrl' => url('/admin/problem-builder') . $this->selectedParamsQuery(['return' => 'module-workspace']),
+            'bulkMediaUrl' => url('/admin/bulk-problem-media') . $this->selectedParamsQuery(),
             'contentStudioUrl' => url('/admin/content-studio') . $this->selectedParamsQuery(),
             'publicChapterUrl' => $selectedChapter ? route('chapter.show.simple', ['chapter' => $selectedChapter->slug, 'lang' => $this->selectedLang]) : null,
             'publicPracticeUrl' => $selectedChapter ? route('chapter.practice.simple', ['chapter' => $selectedChapter->slug, 'lang' => $this->selectedLang]) : null,
@@ -375,7 +378,7 @@ class ModuleWorkspace extends Page
      */
     private function problemWorkspaceRelations(): array
     {
-        $relations = ['texts', 'tags.texts'];
+        $relations = ['texts', 'tags.texts', 'media.texts'];
 
         if (Schema::hasTable('grade_levels')) {
             $relations[] = 'gradeLevels';
@@ -654,6 +657,9 @@ class ModuleWorkspace extends Page
                 return (string) ($text?->title ?? $tag->slug);
             })->filter()->implode(', ');
 
+            $mediaCounts = ProblemMediaUpload::mediaCounts($problem->media ?? collect());
+            $missingMediaText = ProblemMediaUpload::hasMissingText($problem->media ?? collect());
+
             return [
                 'id' => (int) $problem->id,
                 'code' => (string) $problem->problem_code,
@@ -667,6 +673,13 @@ class ModuleWorkspace extends Page
                 'source' => $problem->source_compact,
                 'sort_order' => (int) ($problem->sort_order ?? 0),
                 'statement_html' => (string) ($selectedText?->statement_html ?? ''),
+                'media_counts' => $mediaCounts,
+                'missing_media_text' => $missingMediaText,
+                'problem_builder_url' => url('/admin/problem-builder') . $this->selectedParamsQuery([
+                    'problem_id' => (int) $problem->id,
+                    'return' => 'module-workspace',
+                ]),
+                'bulk_media_url' => url('/admin/bulk-problem-media') . $this->selectedParamsQuery(),
                 'edit_problem_url' => ProblemResource::getUrl('edit', ['record' => $problem]),
                 'edit_ru_url' => $ruText
                     ? ProblemTextResource::getUrl('edit', ['record' => $ruText->id])
@@ -792,6 +805,11 @@ class ModuleWorkspace extends Page
         }
         if ($allContent->contains(fn (string $text): bool => $this->hasLikelyBrokenMathCommand($text))) {
             $warnings[] = ['key' => 'mathjax_broken_command', 'message' => 'Found likely broken commands (cdot/sqrt/frac/binom without backslash)'];
+        }
+
+        $missingMediaCaptions = collect($problemRows)->where('missing_media_text', true)->count();
+        if ($missingMediaCaptions > 0) {
+            $warnings[] = ['key' => 'media_missing_caption', 'message' => "Problems with media missing caption/alt: {$missingMediaCaptions}"];
         }
 
         return ['warnings' => $warnings];

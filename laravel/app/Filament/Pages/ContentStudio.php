@@ -16,6 +16,7 @@ use App\Models\Problem;
 use App\Models\ProblemLadder;
 use App\Models\ProblemLadderText;
 use App\Models\Tag;
+use App\Support\ProblemMediaUpload;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -214,6 +215,8 @@ class ContentStudio extends Page
             'quickAddUrl' => url('/admin/quick-problem') . $this->quickAddQueryString(),
             'translationQueueUrl' => url('/admin/translation-queue') . $this->quickAddQueryString(),
             'moduleWorkspaceUrl' => url('/admin/module-workspace') . $this->quickAddQueryString(),
+            'problemBuilderUrl' => url('/admin/problem-builder') . $this->quickAddQueryString(),
+            'bulkMediaUrl' => url('/admin/bulk-problem-media') . $this->quickAddQueryString(),
         ];
     }
 
@@ -347,7 +350,7 @@ class ContentStudio extends Page
             ->where('chapter_id', $chapter->id)
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->with(['texts', 'tags.texts'])
+            ->with(['texts', 'tags.texts', 'media.texts'])
             ->get();
 
         return $problems->map(function (Problem $problem): array {
@@ -364,6 +367,8 @@ class ContentStudio extends Page
                 return (string) ($text?->title ?? $tag->slug);
             })->filter()->implode(', ');
 
+            $mediaCounts = ProblemMediaUpload::mediaCounts($problem->media ?? collect());
+
             return [
                 'id' => (int) $problem->id,
                 'code' => (string) $problem->problem_code,
@@ -373,7 +378,11 @@ class ContentStudio extends Page
                 'has_ru' => $ruText !== null,
                 'has_en' => $enText !== null,
                 'tags' => $tagTitles,
+                'media_counts' => $mediaCounts,
+                'missing_media_text' => ProblemMediaUpload::hasMissingText($problem->media ?? collect()),
                 'sort_order' => (int) $problem->sort_order,
+                'problem_builder_url' => url('/admin/problem-builder') . $this->quickAddQueryString(['problem_id' => (int) $problem->id, 'return' => 'module-workspace']),
+                'bulk_media_url' => url('/admin/bulk-problem-media') . $this->quickAddQueryString(),
                 'edit_problem_url' => ProblemResource::getUrl('edit', ['record' => $problem]),
                 'edit_ru_url' => $this->problemTextEditUrl((int) $problem->id, 'ru', $ruText?->id),
                 'edit_en_url' => $this->problemTextEditUrl((int) $problem->id, 'en', $enText?->id),
@@ -511,7 +520,7 @@ class ContentStudio extends Page
 
         $problemRows = Problem::query()
             ->where('chapter_id', $chapter->id)
-            ->with('texts')
+            ->with(['texts', 'media.texts'])
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
@@ -546,6 +555,10 @@ class ContentStudio extends Page
         foreach ($problemRows as $problem) {
             if ($problem->texts->isEmpty()) {
                 $warnings[] = "Problem {$problem->problem_code} has no text rows.";
+            }
+
+            if (ProblemMediaUpload::hasMissingText($problem->media ?? collect())) {
+                $warnings[] = "Problem {$problem->problem_code} has media without caption or alt text.";
             }
 
             foreach ($problem->texts as $text) {
@@ -685,7 +698,7 @@ class ContentStudio extends Page
             ->send();
     }
 
-    private function quickAddQueryString(): string
+    private function quickAddQueryString(array $extra = []): string
     {
         $params = [];
         if ($this->selectedCourseId !== null) {
@@ -694,6 +707,7 @@ class ContentStudio extends Page
         if ($this->selectedChapterId !== null) {
             $params['chapter_id'] = $this->selectedChapterId;
         }
+        $params = array_merge($params, $extra);
 
         if ($params === []) {
             return '';

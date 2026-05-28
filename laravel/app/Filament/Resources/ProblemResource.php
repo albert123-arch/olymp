@@ -3,6 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProblemResource\Pages;
+use App\Filament\Resources\ProblemResource\RelationManagers\MediaRelationManager;
+use App\Filament\Resources\ProblemResource\RelationManagers\TextsRelationManager;
 use App\Models\Chapter;
 use App\Models\GradeLevel;
 use App\Models\Problem;
@@ -12,6 +14,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteBulkAction;
 use BackedEnum;
@@ -114,7 +117,13 @@ class ProblemResource extends Resource
             ->defaultSort('sort_order')
             ->columns($columns)
             ->filters($filters)
-            ->actions([EditAction::make()])
+            ->actions([
+                Action::make('builder')
+                    ->label('Builder')
+                    ->icon('heroicon-o-pencil-square')
+                    ->url(fn (Problem $record): string => url('/admin/problem-builder?problem_id='.(int) $record->id.'&return=module-workspace')),
+                EditAction::make(),
+            ])
             ->bulkActions([DeleteBulkAction::make()]);
     }
 
@@ -124,6 +133,14 @@ class ProblemResource extends Resource
             'index' => Pages\ListProblems::route('/'),
             'create' => Pages\CreateProblem::route('/create'),
             'edit' => Pages\EditProblem::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            TextsRelationManager::class,
+            MediaRelationManager::class,
         ];
     }
 }

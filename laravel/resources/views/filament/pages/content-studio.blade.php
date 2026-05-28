@@ -38,6 +38,8 @@
         </div>
         <div class="flex justify-end gap-2">
             <a href="{{ $moduleWorkspaceUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-primary">Module Workspace</a>
+            <a href="{{ $problemBuilderUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Problem Builder</a>
+            <a href="{{ $bulkMediaUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Bulk Diagrams</a>
             <a href="{{ $translationQueueUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Translation Queue</a>
         </div>
 
@@ -160,7 +162,11 @@
             @if ($activeTab === 'problems')
                 <x-filament::section>
                     <div class="flex flex-wrap items-end justify-between gap-2 mb-4">
-                        <a href="{{ $quickAddUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-primary">+ Quick Add Problem</a>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ $quickAddUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-primary">+ Quick Add Problem</a>
+                            <a href="{{ $problemBuilderUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Problem Builder</a>
+                            <a href="{{ $bulkMediaUrl }}" class="fi-btn fi-btn-size-sm fi-btn-color-gray">Bulk Diagrams</a>
+                        </div>
                     </div>
                     <div class="flex flex-wrap items-end gap-2 mb-4">
                         <button type="button" wire:click="publishSelected" class="fi-btn fi-btn-size-sm fi-btn-color-success">Publish selected</button>
@@ -200,6 +206,8 @@
                                     <th class="p-2 text-left">RU</th>
                                     <th class="p-2 text-left">EN</th>
                                     <th class="p-2 text-left">Tags</th>
+                                    <th class="p-2 text-left">Media</th>
+                                    <th class="p-2 text-left">Media warnings</th>
                                     <th class="p-2 text-left">Sort</th>
                                     <th class="p-2 text-left">Actions</th>
                                 </tr>
@@ -222,9 +230,24 @@
                                         <td class="p-2">{!! $problem['has_ru'] ? '✅' : '❌' !!}</td>
                                         <td class="p-2">{!! $problem['has_en'] ? '✅' : '❌' !!}</td>
                                         <td class="p-2">{{ $problem['tags'] }}</td>
+                                        <td class="p-2 whitespace-nowrap">
+                                            S: {{ $problem['media_counts']['statement'] ?? 0 }} /
+                                            H: {{ $problem['media_counts']['hint'] ?? 0 }} /
+                                            Sol: {{ $problem['media_counts']['solution'] ?? 0 }} /
+                                            E: {{ $problem['media_counts']['extra'] ?? 0 }}
+                                        </td>
+                                        <td class="p-2">
+                                            @if($problem['missing_media_text'])
+                                                <span class="text-warning-700">Missing caption/alt</span>
+                                            @else
+                                                <span class="text-success-700">OK</span>
+                                            @endif
+                                        </td>
                                         <td class="p-2">{{ $problem['sort_order'] }}</td>
                                         <td class="p-2">
                                             <div class="flex flex-wrap gap-1">
+                                                <a href="{{ $problem['problem_builder_url'] }}" class="fi-btn fi-btn-size-xs fi-btn-color-primary">Builder</a>
+                                                <a href="{{ $problem['bulk_media_url'] }}" class="fi-btn fi-btn-size-xs fi-btn-color-gray">Bulk media</a>
                                                 <a href="{{ $problem['edit_problem_url'] }}" class="fi-btn fi-btn-size-xs fi-btn-color-primary">Edit problem</a>
                                                 <a href="{{ $problem['edit_ru_url'] }}" class="fi-btn fi-btn-size-xs fi-btn-color-gray">Edit RU text</a>
                                                 <a href="{{ $problem['edit_en_url'] }}" class="fi-btn fi-btn-size-xs fi-btn-color-gray">Edit EN text</a>
@@ -237,7 +260,7 @@
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="10" class="p-3 text-gray-500">No problems for this chapter.</td></tr>
+                                    <tr><td colspan="12" class="p-3 text-gray-500">No problems for this chapter.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
