@@ -13,7 +13,7 @@
         </div>
 
         @if($course['description_html'])
-            <div class="content-html math-content text-secondary mb-3">
+            <div class="content-html math-content reader-module-list text-secondary mb-3">
                 {!! $course['description_html'] !!}
             </div>
         @endif

@@ -4,7 +4,7 @@
             <p class="muted-label mb-1 text-secondary">{{ __('public.chapter') }}</p>
             <h3 class="h4 mb-2">{{ $chapter['title'] }}</h3>
             @if($chapter['description_html'])
-                <div class="content-html math-content text-secondary mb-0">
+                <div class="content-html math-content reader-module-list text-secondary mb-0">
                     {!! $chapter['description_html'] !!}
                 </div>
             @endif

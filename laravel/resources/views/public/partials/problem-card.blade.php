@@ -10,6 +10,15 @@
     $detailsLabel = $isRu ? "\u{0414}\u{0435}\u{0442}\u{0430}\u{043B}\u{0438}" : 'Details';
     $hideHintLabel = $isRu ? "\u{0421}\u{043A}\u{0440}\u{044B}\u{0442}\u{044C} \u{043F}\u{043E}\u{0434}\u{0441}\u{043A}\u{0430}\u{0437}\u{043A}\u{0443}" : 'Hide hint';
     $hideSolutionLabel = $isRu ? "\u{0421}\u{043A}\u{0440}\u{044B}\u{0442}\u{044C} \u{0440}\u{0435}\u{0448}\u{0435}\u{043D}\u{0438}\u{0435}" : 'Hide solution';
+    $titlePrefixPattern = '/^\s*(?:#|\x{2116})?\s*\d+(?:\.\d+)+(?:[.)\]:-])?\s*/u';
+    $cleanProblemTitle = trim((string) ($problem['title'] ?? ''));
+    for ($i = 0; $i < 2; $i++) {
+        $nextTitle = trim((string) preg_replace($titlePrefixPattern, '', $cleanProblemTitle));
+        if ($nextTitle === $cleanProblemTitle || $nextTitle === '') {
+            break;
+        }
+        $cleanProblemTitle = $nextTitle;
+    }
 @endphp
 
 <article id="{{ $problemUid }}"
@@ -23,7 +32,7 @@
             <div class="reader-mobile-kicker">{{ $displayNumber }}</div>
             <div class="d-flex flex-wrap align-items-center gap-2">
                 <span class="badge text-bg-light border reader-number-badge">{{ $displayNumber }}</span>
-                <h3 class="h6 mb-0 reader-problem-title">{{ $problem['title'] }}</h3>
+                <h3 class="h6 mb-0 reader-problem-title">{{ $cleanProblemTitle }}</h3>
             </div>
         </div>
 
@@ -77,10 +86,6 @@
         <div class="reader-statement content-html math-content math-block mb-3">
             {!! $problem['statement_html'] !!}
         </div>
-    @endif
-
-    @if(!empty($problem['source_label']))
-        <div class="small text-secondary mb-3 reader-source-desktop">{{ $problem['source_label'] }}</div>
     @endif
 
     @if($hasHint)

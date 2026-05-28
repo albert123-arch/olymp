@@ -1,5 +1,23 @@
 @extends('layouts.public')
 
+@php
+    $cleanReaderTitle = static function (?string $title): string {
+        $title = trim((string) $title);
+        $pattern = '/^\s*(?:#|\x{2116})?\s*\d+(?:\.\d+)+(?:[.)\]:-])?\s*/u';
+        $cleaned = $title;
+
+        for ($i = 0; $i < 2; $i++) {
+            $next = trim((string) preg_replace($pattern, '', $cleaned));
+            if ($next === $cleaned || $next === '') {
+                break;
+            }
+            $cleaned = $next;
+        }
+
+        return $cleaned !== '' ? $cleaned : $title;
+    };
+@endphp
+
 @section('content')
     <div class="reader-shell">
         @if(count($ladder['steps']) > 0)
@@ -13,7 +31,7 @@
                                data-reader-nav-link>
                                 <span class="reader-nav-number">{{ str_pad((string) $step['step_number'], 2, '0', STR_PAD_LEFT) }}</span>
                                 <span class="min-w-0">
-                                    <span class="reader-nav-title">{{ $step['step_title'] }}</span>
+                                    <span class="reader-nav-title">{{ $cleanReaderTitle($step['step_title'] ?? '') }}</span>
                                     <span class="reader-nav-meta">{{ $step['step_type_label'] }} &middot; {{ $step['difficulty_stars'] }}</span>
                                 </span>
                             </a>

@@ -465,9 +465,13 @@ body.reader-active footer {
 }
 
 .reader-nav-title {
+    display: -webkit-box;
+    line-height: 1.25;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
 }
 
 .reader-nav-meta {
@@ -478,6 +482,21 @@ body.reader-active footer {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.reader-module-list ul,
+.reader-module-list ol {
+    list-style: none;
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.reader-module-list li {
+    margin-bottom: 0.45rem;
+}
+
+.reader-module-list li:last-child {
+    margin-bottom: 0;
 }
 
 .reader-chip-nav {

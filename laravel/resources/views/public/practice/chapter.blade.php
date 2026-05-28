@@ -1,12 +1,28 @@
 @extends('layouts.public')
 
 @php
+    $cleanReaderTitle = static function (?string $title): string {
+        $title = trim((string) $title);
+        $pattern = '/^\s*(?:#|\x{2116})?\s*\d+(?:\.\d+)+(?:[.)\]:-])?\s*/u';
+        $cleaned = $title;
+
+        for ($i = 0; $i < 2; $i++) {
+            $next = trim((string) preg_replace($pattern, '', $cleaned));
+            if ($next === $cleaned || $next === '') {
+                break;
+            }
+            $cleaned = $next;
+        }
+
+        return $cleaned !== '' ? $cleaned : $title;
+    };
+
     $readerItems = [];
     foreach ($chapter['problems'] as $problem) {
         $readerItems[] = [
             'id' => 'problem-' . $problem['id'],
             'number' => $problem['display_number'] ?? $problem['code'],
-            'title' => $problem['title'],
+            'title' => $cleanReaderTitle($problem['title'] ?? ''),
             'solved' => (bool) ($problem['is_solved'] ?? false),
         ];
     }
@@ -25,7 +41,7 @@
                                data-reader-nav-link>
                                 <span class="reader-nav-number">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
                                 <span class="min-w-0">
-                                    <span class="reader-nav-title">{{ $item['number'] }} {{ $item['title'] }}</span>
+                                    <span class="reader-nav-title">{{ $item['title'] }}</span>
                                     @if($item['solved'])
                                         <span class="reader-nav-meta">{{ __('public.solved') }}</span>
                                     @endif

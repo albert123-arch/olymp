@@ -7,7 +7,7 @@
                 <p class="muted-label mb-2 text-secondary">{{ __('public.course') }}</p>
                 <h1 class="h2 mb-3">{{ $course['title'] }}</h1>
                 @if($course['description_html'])
-                    <div class="content-html math-content">
+                    <div class="content-html math-content reader-module-list">
                         {!! $course['description_html'] !!}
                     </div>
                 @endif
