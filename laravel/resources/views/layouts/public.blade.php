@@ -212,6 +212,8 @@
                 <a href="https://olymp.maths4u.sbs/" target="_blank" rel="noreferrer">olymp.maths4u.sbs</a>
                 <span class="mx-2">•</span>
                 <a href="mailto:support@maths4u.sbs">support@maths4u.sbs</a>
+                <span class="mx-2">&middot;</span>
+                <a href="https://boosty.to/maths4u/single-payment/donation/804797/target?share=target_link" target="_blank" rel="noreferrer">Support Maths4U</a>
             </div>
         </div>
     </footer>

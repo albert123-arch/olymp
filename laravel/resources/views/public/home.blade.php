@@ -49,4 +49,18 @@
             @endforelse
         </div>
     </section>
+
+    <section class="content-panel p-4 mt-4">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div>
+                <h2 class="h5 mb-2">Support Maths4U</h2>
+                <p class="mb-1">Maths4U is an independent educational project.</p>
+                <p class="mb-0 text-secondary">Your support helps cover hosting, domains, storage, and development.</p>
+            </div>
+            <a class="btn btn-outline-secondary"
+               href="https://boosty.to/maths4u/single-payment/donation/804797/target?share=target_link"
+               target="_blank"
+               rel="noreferrer">Support</a>
+        </div>
+    </section>
 @endsection

@@ -27,7 +27,7 @@
         <label class="problem-media-resize">
             <span>{{ $resizeLabel }}</span>
             <input type="range"
-                   min="45"
+                   min="10"
                    max="160"
                    step="5"
                    value="100"

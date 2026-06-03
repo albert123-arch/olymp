@@ -23,7 +23,7 @@
             return 100;
         }
 
-        return Math.min(160, Math.max(45, parsed));
+        return Math.min(160, Math.max(10, parsed));
     };
 
     const mediaSizeStorageKey = function (figure) {
