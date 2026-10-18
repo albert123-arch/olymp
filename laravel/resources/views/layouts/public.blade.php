@@ -26,6 +26,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:wght@500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="{{ asset('css/olymp-reader.css') }}" rel="stylesheet">
+    <link href="/platform-statistics.css" rel="stylesheet">
     <style>
         :root {
             --site-navy: #123a52;
@@ -218,6 +219,19 @@
         </div>
     </footer>
 </div>
+@guest
+    @if(request()->routeIs('home', 'courses.index', 'ladders.index'))
+        <div id="platform-statistics" hidden></div>
+        <script type="module">
+            import { createStatistics } from '/js/platform-statistics.mjs?v=20261018';
+            createStatistics({ container: document.getElementById('platform-statistics') }).update({
+                path: window.location.pathname,
+                eligible: true,
+                language: document.documentElement.lang
+            });
+        </script>
+    @endif
+@endguest
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ asset('js/olymp-reader.js') }}" defer></script>
 <script>

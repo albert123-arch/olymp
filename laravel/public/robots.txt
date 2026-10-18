@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /login
+Disallow: /register
+Disallow: /logout
+Disallow: /laravel/
+Disallow: /config.php
+
+Sitemap: https://olymp.maths4u.sbs/sitemap.xml
