@@ -223,7 +223,7 @@
     @if(request()->routeIs('home', 'courses.index', 'ladders.index'))
         <div id="platform-statistics" hidden></div>
         <script type="module">
-            import { createStatistics } from '/js/platform-statistics.mjs?v=20261018';
+            import { createStatistics } from '/js/platform-statistics.js?v=20261018';
             createStatistics({ container: document.getElementById('platform-statistics') }).update({
                 path: window.location.pathname,
                 eligible: true,
