@@ -20,6 +20,7 @@ jobs:
       - name: Deploy changed files by FTP with lftp
         run: |
           lftp -u "${{ secrets.FTP_USERNAME }}","${{ secrets.FTP_PASSWORD }}" "${{ secrets.FTP_SERVER }}" <<EOF
+          set cmd:fail-exit yes
           set ftp:ssl-allow no
           set net:timeout 30
           set net:max-retries 2
@@ -46,6 +47,12 @@ jobs:
             --exclude-glob **/*.tar.gz \
             --exclude-glob **/composer-setup.php \
             --exclude-glob **/composer.phar
+
+          # FTP timestamps can leave the compiled public layout stale after a
+          # rapid follow-up release. Upload this tracked template explicitly,
+          # using the server's current time so Blade recompiles it.
+          set ftp:use-site-utime no
+          put laravel/resources/views/layouts/public.blade.php -o laravel/resources/views/layouts/public.blade.php
 
           bye
           EOF
