@@ -106,3 +106,14 @@ Never commit production credentials or SQL exports.
 - Old plain PHP files remain untouched as fallback.
 - Laravel should become primary only after production validation.
 - No destructive deletion is required for cutover.
+
+
+## AdSense declaration (18 October 2026)
+
+`ads.txt` and `laravel/public/ads.txt` contain the same public seller declaration
+for `pub-8460068132661870`. Both are tracked so either supported document root
+serves `/ads.txt` after the existing FTP source deployment. No PHP migrations,
+cache reset, dependency changes, ad SDK or ad placement is added by this update.
+AdSense remains under review and advertising remains disabled. Keep database
+credentials, private storage and unrelated untracked import scripts out of the
+release. The existing deployment mirrors without deletion and preserves them.
